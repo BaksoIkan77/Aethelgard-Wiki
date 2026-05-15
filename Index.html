@@ -1,0 +1,2107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aethelgard Wiki</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+
+  :root {
+    --bg: #0d0f12;
+    --surface: #13151a;
+    --surface2: #1a1c22;
+    --border: #2a2c33;
+    --text: #c8c0b0;
+    --heading: #d4c89a;
+    --accent: #b8942e;
+    --accent-dim: #5a4a1e;
+    --link: #c0a050;
+    --sidebar-w: 260px;
+    --toggle-size: 40px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'EB Garamond', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    line-height: 1.7;
+    font-size: 16px;
+  }
+
+  /* ── LAYOUT ── */
+  #app {
+    display: flex;
+    height: 100vh;
+    position: relative;
+  }
+
+  /* ── ACCORDION (DETAILS) ── */
+.nation-details {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 0.8rem;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.nation-details summary {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: var(--heading);
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  letter-spacing: 1px;
+  background: #161820;
+  transition: background 0.2s, border-color 0.2s;
+  list-style: none;
+}
+
+.nation-details summary::-webkit-details-marker { display: none; }
+
+.nation-details summary:hover {
+  background: #1d1f28;
+  border-bottom-color: var(--accent-dim);
+}
+
+.nation-details[open] summary {
+  border-bottom: 1px solid var(--accent);
+  background: #1a1c26;
+}
+
+.nation-details .nation-content {
+  padding: 1.8rem 2rem;
+}
+
+/* Panduan "Tap to Expand" di kanan bawah summary */
+.nation-details summary {
+  position: relative;
+}
+
+.expand-hint {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 0.4rem;
+  font-size: 0.7rem;
+  color: var(--accent-dim);
+  opacity: 0.7;
+  font-style: italic;
+}
+  
+  /* ── SIDEBAR ── */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(calc(-1 * var(--sidebar-w)));
+    transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+    z-index: 100;
+    overflow: hidden;
+  }
+
+  #sidebar.open {
+    transform: translateX(0);
+    box-shadow: 6px 0 32px rgba(0,0,0,0.6);
+  }
+
+  #sidebar-header {
+    padding: 1.8rem 1.2rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  #sidebar-header h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    color: var(--heading);
+    letter-spacing: 3px;
+    font-weight: 600;
+  }
+
+  #sidebar-header small {
+    display: block;
+    color: #7a7050;
+    font-size: 0.72rem;
+    margin-top: 0.3rem;
+    letter-spacing: 1px;
+  }
+
+  #nav-list {
+    list-style: none;
+    padding: 0.8rem 0;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  #nav-list li button {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    padding: 0.65rem 1.2rem;
+    background: none;
+    border: none;
+    border-left: 3px solid transparent;
+    color: #a09070;
+    font-family: 'EB Garamond', serif;
+    font-size: 0.92rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.18s;
+    letter-spacing: 0.3px;
+  }
+
+  #nav-list li button:hover {
+    background: #1e2028;
+    color: var(--heading);
+    border-left-color: var(--accent-dim);
+  }
+
+  #nav-list li button.active {
+    color: var(--heading);
+    border-left-color: var(--accent);
+    background: #1f2128;
+  }
+
+  #nav-list li button .nav-num {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    color: var(--accent-dim);
+    min-width: 1.4rem;
+    opacity: 0.8;
+  }
+
+  #nav-list li button.active .nav-num {
+    color: var(--accent);
+    opacity: 1;
+  }
+
+  /* ── OVERLAY ── */
+  #overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 99;
+    backdrop-filter: blur(2px);
+  }
+
+  #overlay.show { display: block; }
+
+/* Supaya gambar di dalam konten selalu responsif */
+.section-inner img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+/* Hilangkan border dan padding jika placeholder hanya berisi gambar */
+.img-placeholder:has(img) {
+  padding: 0;
+  border: none;
+  background: none;
+  margin: 0;
+}
+  
+  /* ── TOGGLE BUTTON ── */
+  #toggle-btn {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    width: var(--toggle-size);
+    height: var(--toggle-size);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    z-index: 200;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  #toggle-btn:hover {
+    background: #22242d;
+    border-color: var(--accent-dim);
+  }
+
+  #toggle-btn span {
+    display: block;
+    width: 18px;
+    height: 1.5px;
+    background: var(--heading);
+    transition: all 0.25s;
+    transform-origin: center;
+  }
+
+  /* Animate to X when open */
+  body.sidebar-open #toggle-btn span:nth-child(1) {
+    transform: translateY(6.5px) rotate(45deg);
+  }
+  body.sidebar-open #toggle-btn span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  body.sidebar-open #toggle-btn span:nth-child(3) {
+    transform: translateY(-6.5px) rotate(-45deg);
+  }
+
+  /* ── MAIN CONTENT AREA ── */
+  #main {
+    flex: 1;
+    overflow-y: auto;
+    height: 100vh;
+  }
+
+  /* ── SECTIONS ── */
+  .wiki-section {
+    display: none;
+    min-height: 100vh;
+  }
+
+  .wiki-section.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-inner {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3.5rem 2rem 5rem 5rem;
+  }
+
+  /* ── TYPOGRAPHY ── */
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.8rem;
+    color: var(--heading);
+    font-weight: 600;
+    letter-spacing: 2px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.9rem;
+    margin-bottom: 1.8rem;
+  }
+
+  h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    color: var(--heading);
+    margin: 2.5rem 0 1rem;
+    font-weight: 400;
+    letter-spacing: 1px;
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin: 2rem 0 0.7rem;
+    font-weight: 500;
+    font-style: italic;
+  }
+
+  h4 { font-size: 1rem; color: #b0a060; margin: 1.5rem 0 0.5rem; }
+
+  p { margin-bottom: 1rem; }
+  strong { color: #ddd0a0; }
+  em { color: #b09050; }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.9rem;
+    text-align: left;
+  }
+
+  th {
+    background: #161820;
+    color: var(--heading);
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+
+  td { background: #111318; }
+
+  blockquote {
+    border-left: 3px solid var(--accent-dim);
+    padding: 0.8rem 1.4rem;
+    margin: 1.5rem 0;
+    color: #a09070;
+    font-style: italic;
+    background: #111217;
+    border-radius: 0 6px 6px 0;
+  }
+
+  ul, ol { margin-left: 1.5rem; margin-bottom: 1rem; }
+  li { margin-bottom: 0.3rem; }
+  a { color: var(--link); }
+
+  .img-placeholder {
+    background: #13151c;
+    border: 1px dashed #2a2a35;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    color: #454555;
+    margin: 1.5rem 0;
+    font-size: 0.85rem;
+  }
+
+  .classified {
+    background: #160a0a;
+    border: 1px solid #4a1818;
+    padding: 1rem 1.5rem;
+    border-radius: 6px;
+    margin: 1.5rem 0;
+    color: #c08080;
+  }
+
+  .classified strong { color: #cc3333; display: block; margin-bottom: 0.5rem; letter-spacing: 2px; font-family: 'Cinzel', serif; font-size: 0.85rem; }
+
+  /* Section title bar */
+  .section-title-bar {
+    background: linear-gradient(to right, #161820, transparent);
+    border-bottom: 1px solid var(--border);
+    padding: 0.9rem 2rem 0.9rem 5rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    color: #5a5060;
+    text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+  }
+
+  /* ── WELCOME SCREEN ── */
+  #section-welcome {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: unset;
+padding: 4rem 1rem;
+  }
+
+  .welcome-content {
+    text-align: center;
+    padding: 2rem;
+    max-width: 520px;
+  }
+
+  .welcome-title {
+    font-family: 'Cinzel', serif;
+    font-size: 3rem;
+    color: var(--heading);
+    letter-spacing: 6px;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+
+  .welcome-sub {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    color: var(--accent);
+    letter-spacing: 4px;
+    margin-bottom: 2rem;
+    opacity: 0.7;
+  }
+
+  .welcome-desc {
+    color: #8a8070;
+    font-size: 1rem;
+    margin-bottom: 2.5rem;
+    font-style: italic;
+    line-height: 1.8;
+  }
+
+  .welcome-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    border: 1px solid var(--border);
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    color: #6a6050;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    animation: pulse-border 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: var(--border); }
+    50% { border-color: var(--accent-dim); }
+  }
+
+  /* Scroll styling */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2c33; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3c45; }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .section-inner { padding: 2.5rem 1.2rem 4rem 1.2rem; }
+    .section-title-bar { padding-left: 1.2rem; }
+    h1 { font-size: 1.4rem; }
+    .welcome-title { font-size: 2rem; }
+  }
+  
+  /* ── MYTH vs TRUTH BLOCKS ── */
+.myth-block {
+  border-left: 3px solid var(--accent);
+  background: #1a1c20;
+  color: #c8b860;
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.truth-block {
+  border-left: 3px solid #8b3a3a;
+  background: #1a1010;
+  color: #c08080;
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 0 6px 6px 0;
+}
+
+/* ── CARDINAL AXIS "KOMPAS" ── */
+.cardinal-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.cardinal-item {
+  background: #12151c;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.direction-badge {
+  display: inline-block;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  color: var(--accent);
+  background: #1a1e26;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  margin-bottom: 0.8rem;
+}
+
+.cardinal-item h3 {
+  margin-top: 0;
+  color: var(--heading);
+}
+  
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Toggle Button -->
+  <button id="toggle-btn" aria-label="Toggle navigation">
+    <span></span><span></span><span></span>
+  </button>
+
+  <!-- Overlay -->
+  <div id="overlay"></div>
+
+  <!-- Sidebar -->
+  <nav id="sidebar">
+    <div id="sidebar-header">
+      <h2>⚔ AETHELGARD</h2>
+      <small>The Stitched World</small>
+    </div>
+    <ul id="nav-list">
+      <li><button data-target="world-overview" class="active"><span class="nav-num">I</span>World Overview</button></li>
+      <li><button data-target="five-goddesses"><span class="nav-num">II</span>The Five Goddesses</button></li>
+      <li><button data-target="weave-aether"><span class="nav-num">III</span>The Weave & Aether</button></li>
+      <li><button data-target="geography"><span class="nav-num">IV</span>Geography</button></li>
+      <li><button data-target="nations"><span class="nav-num">V</span>Nations & Factions</button></li>
+      <li><button data-target="dungeons"><span class="nav-num">VI</span>Dungeons</button></li>
+      <li><button data-target="bestiary"><span class="nav-num">VII</span>Bestiary</button></li>
+      <li><button data-target="races"><span class="nav-num">VIII</span>Races</button></li>
+      <li><button data-target="timeline"><span class="nav-num">IX</span>Timeline</button></li>
+      <li><button data-target="characters" style="opacity:0.45;cursor:default;pointer-events:none;"><span class="nav-num">X</span>Notable Characters <em style="font-size:0.75rem">(Soon)</em></button></li>
+    </ul>
+  </nav>
+
+  <!-- Main -->
+  <div id="main">
+
+    <!-- Welcome -->
+    <div id="section-welcome" class="wiki-section active">
+      <div class="welcome-content">
+        <div class="welcome-title">AETHELGARD</div>
+        <div class="welcome-sub">The Stitched World</div>
+        <p class="welcome-desc">
+          A world born not from love, but from necessity.<br>
+          A lifeboat built on the bones of a ruined era.<br>
+          Countless gods went to war. Five survived. One world remained.
+        </p>
+        <div class="welcome-hint">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="2" y1="4" x2="12" y2="4"/><line x1="2" y1="7" x2="12" y2="7"/><line x1="2" y1="10" x2="12" y2="10"/>
+          </svg>
+          Open the menu to explore
+        </div>
+      </div>
+    </div>
+
+<!-- I. World Overview -->
+<div id="section-world-overview" class="wiki-section">
+  <div class="section-title-bar">Aethelgard Wiki — I. World Overview</div>
+  <div class="section-inner">
+    <h1>I. THE AETHELGARD CHRONICLES</h1>
+
+    <!-- THE PRIMORDIAL ERA -->
+    <h2>The Primordial Era: The War of Attrition</h2>
+    <p>Long before the dawn of mortal history, the world was a borderless realm ruled by dozens of godlike entities and ancient races—beings whose names have been erased from memory, whose forms were concepts rather than flesh. Greed for absolute dominion eventually ignited <strong>The Great Shattering</strong>, an apocalyptic conflict also known as the War of the Gods. Reality itself was torn asunder as divine weapons shattered continents and erased entire bloodlines from existence.</p>
+
+    <!-- FORCED GENESIS -->
+    <h2>Forced Genesis: The Silent Consensus</h2>
+    <p>When the dust of divine war finally settled, only five goddesses remained. Realizing that continuing their conflict would guarantee total annihilation—not just of themselves, but of all remaining life—they forged a bitter, silent truce. With the absolute last reserves of their divine authority, they became the reluctant creators of a new world.</p>
+    <p><strong>The Grafting:</strong> The Five forcibly fused the shattered remnants of the Old World into a single, finite continent. The seams where these fragments meet would forever remain unstable—bleeding magic, radiation, and the grudges of a dead era.</p>
+    <p><strong>The Great Slumber:</strong> Exhausted beyond measure, the goddesses buried themselves deep within the earth. They became the world's bones, its gravity, its heartbeat.</p>
+    <blockquote class="myth-block"><strong>◆ The Sweet Myth</strong><br>The world was born from the perfect harmony of the Five Goddesses—a beautiful gift created out of love for their descendants.</blockquote>
+    <blockquote class="truth-block"><strong>◆ The Dark Truth</strong><br>Aethelgard is a stitched-together, radioactive corpse of a ruined era. Its skies bleed auroras. Its soil remembers death. The goddesses did not create a paradise. They built a lifeboat—and the lifeboat is leaking.</blockquote>
+
+    <!-- THE STITCHED WORLD -->
+    <h2>The Stitched World: Scale &amp; Scope</h2>
+        <img src="Cracked_Aurora.jpeg" alt="Cracked Aurora over Aethelgard" style="width:100%; border-radius:8px; margin:1.5rem 0;">
+    <p>Aethelgard is a finite continent surrounded on all sides by ocean, and beyond that—<strong>the Void</strong>, the absolute physical edge of reality where existence itself ceases. The total landmass spans approximately <strong>180 million square kilometers</strong>.</p>
+    <ul>
+      <li><strong>Sovereign Domains (~74%):</strong> Conquered, civilized, and claimed by nations. Roads are paved. Laws are enforced. The myth of a harmonious world still holds.</li>
+      <li><strong>Untamed Frontiers (~26%):</strong> Wilderness, unstable Seam Zones, and dead regions where even monsters refuse to tread. Not empty lands waiting to be claimed—wounds that have not yet finished bleeding.</li>
+    </ul>
+    <p>Above, the sky is periodically illuminated by a <strong>cracked aurora</strong>—a permanent scar revealing the shattered limits of the Old World.</p>
+
+    <!-- THE CARDINAL AXIS -->
+    <h2>The Cardinal Axis: A World in Four Directions</h2>
+    <p>Imagine standing at the heart of Aethelgard—the fertile Valley of Kings, with the gleaming spires of Aethelburg rising behind you. From here, the world stretches out in every direction.</p>
+
+    <div class="cardinal-group">
+      <div class="cardinal-item"><span class="direction-badge">⬆ NORTH</span><h3>The Vorn Mountains</h3><p>A titanic, snow-capped wall stretching across the northern horizon. Its peaks hide Dragon Nest, the Dwarven realms of Kazad-Vorn and Vorn-Taraz, and the Orc fortress of Gar-Vang. A constant, eerie hum—the Giant's Breath—echoes through the stone. From its glaciers, three great rivers are born.</p></div>
+      <div class="cardinal-item"><span class="direction-badge">⬅ WEST</span><h3>The Iron Valley, Seam Zone &amp; Black Domain</h3><p>Beyond the Valley of Kings lie the crimson-stained Western Hills and the mercenary city of Ferrostad. Further west, the Western Seam Zone—a toxic, reality-broken wasteland guarded by the Theocracy. At the continent's edge sprawls the Black Domain, where demons dwell and the First King slumbers beneath Malakh-Kar.</p></div>
+      <div class="cardinal-item"><span class="direction-badge">➡ EAST</span><h3>The Grasslands &amp; Eastern Seam Zone</h3><p>Civilization thins beyond the Eastern Hills. The nomadic Werebeasts of The Pack roam the endless golden savanna, following herds and the colossal Walking Mountains. Further east lies the Eastern Seam Zone—the most Dungeon-dense region in the world, where only the bravest Guildhall expeditions dare to tread.</p></div>
+      <div class="cardinal-item"><span class="direction-badge">⬇ SOUTH</span><h3>The Primeval Forest &amp; Noctisia</h3><p>The ancient, singing woodland of the Primeval Forest dominates the south, home to the memory-keeping Elves of Aelderim, the pacifist Werebeasts of Verdantus, and the progressive Elves of Sol-Ventari. Beyond the forest, across the Southern Sea, the vampire island of Noctisia hides behind its sentient Guardian Mist.</p></div>
+    </div>
+    <p><em>For detailed geography—rivers, Seam Zones, seas, and the Void—see <strong>Section IV: Geography</strong>.</em></p>
+
+    <hr>
+
+ <!-- THE WORLD'S IMMUNE SYSTEM -->
+<h2>The World's Immune System</h2>
+<p>Aethelgard is a living, wounded entity that remembers its death. The goddess <strong>Nyxara</strong> created an immune system—a vast ecology of predators designed to protect the stitched reality from threats both foreign and ancient. Surface monsters hunt and kill. When Dungeon spawn appear—foreign infections born from the grudges of the Old World—surface monsters attack them on sight. This is the <strong>Law of Antipathy</strong>: not cooperation, but instinct. An immune response.</p>
+
+<h3>Behemoths — Guardians of the Land</h3>
+<img src="Behemoths.jpeg" alt="Behemoth in the Grasslands" style="width:100%; border-radius:8px; margin:1.5rem 0;">
+<p>Nyxara's immune system given flesh and stone: living geological titans, not monsters, not gods. No two identical. Skin of living granite, cooled magma, ancient bark, or packed earth. Entire forests grow on their backs. Eyes glow faint Aether-light, half-closed as if dreaming. A low hum vibrates for kilometers—Pure Behemoths radiate ancient calm; Corrupted ones shriek, skin cracking to reveal infected Aether-flesh. They range from <strong>15 meters to over 50 kilometers</strong> in length. The largest—the Walking Mountains—are so vast that forests, lakes, and entire ecosystems thrive upon their backs. Their footsteps carve valleys. Their sleep lasts millennia.</p>
+
+<h3>Leviathans — Guardians of the Sea</h3>
+<img src="Leviathans.jpeg" alt="Leviathan at the Void's edge" style="width:100%; border-radius:8px; margin:1.5rem 0;">
+<p>The combined will of all Five Goddesses woven into living form. Serpentine titans whose coils stretch from horizon to horizon. Scales harder than iron. Eyes like dying suns—or absent entirely. They patrol the Black Zone and the Void's edge with ancient, unwavering purpose. They do not hunt. They do not chase. They simply rise—and the ship is no longer there. The largest, the <strong>World-Enders</strong>, measure <strong>10 to 30 kilometers</strong> in length. Fewer than seven exist. They circle the Void itself, silhouettes against the nothingness. They are the world's last wall. Whatever lies beyond the Void, the Leviathans ensure it stays there.</p>
+
+    <hr>
+
+    <!-- TRAVEL, INFRASTRUCTURE, AND COMMERCE -->
+    <h2>Travel, Infrastructure &amp; Commerce</h2>
+    <ul>
+      <li><strong>On foot:</strong> 30–40 km/day on roads; 20–25 km/day off-road.</li>
+      <li><strong>Horse:</strong> 50 km/day. <strong>Wagon:</strong> 30 km/day. <strong>Aether-vehicles:</strong> Faster, depending on type and core grade.</li>
+      <li><strong>Crossing a small nation:</strong> 10–15 days. <strong>A large nation:</strong> 80–100 days. <strong>Coast-to-coast:</strong> 1.5–2 years on foot.</li>
+    </ul>
+    <p>Paved roads are standard across all sovereign nations. The Valdran Empire and Vorn-Taraz boast the finest highways. The Black Domain has only shattered remnants of Old World routes. <strong>Technology</strong> operates on medieval magicraft—no gunpowder, no fossil fuels. Everything runs on <strong>Aether Cores</strong>, crystallized magical energy harvested from monsters and dungeons. <strong>Air travel</strong> belongs exclusively to Dragons, Sylphs, and Fallen Angels.</p>
+
+    <!-- CURRENCY -->
+    <h3>Currency</h3>
+    <p>Universal and valid worldwide. Minted by the Valdran Empire, accepted everywhere—even the Black Domain, where it buys smuggled food and silence.</p>
+    <table>
+      <tr><th>Coin</th><th>Exchange Rate</th></tr>
+      <tr><td>Copper Coin</td><td>Base unit</td></tr>
+      <tr><td>Silver Coin</td><td>10 Copper = 1 Silver</td></tr>
+      <tr><td>Gold Coin</td><td>100 Silver = 1 Gold</td></tr>
+      <tr><td>Aethel Coin</td><td>1,000 Gold = 1 Aethel</td></tr>
+    </table>
+    <p><em>Gold buys goods. Aether Cores buy survival. The true currency of power is energy—and energy comes from the dead.</em></p>
+
+  </div>
+</div>
+
+<!-- II. The Five Goddesses -->
+<div id="section-five-goddesses" class="wiki-section">
+  <div class="section-title-bar">Aethelgard Wiki — II. The Five Goddesses</div>
+  <div class="section-inner">
+    <h1>II. THE FIVE GODDESSES</h1>
+
+    <p>Before the Great Shattering, dozens of divine entities walked the Old World. By the time the dust of the War of the Gods settled, only five remained. These five goddesses—wounded, exhausted, and burdened by the weight of their own survival—became the reluctant creators of Aethelgard.</p>
+
+    <!-- AETHELGARD -->
+    <img src="Aethelgard.jpg" alt="Aethelgard, Goddess of Spatial Stability" style="width:100%; border-radius:8px; margin:1rem 0;">
+    <details class="nation-details">
+      <summary>
+        AETHELGARD — The Law of Spatial Stability
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <p><strong>Domain:</strong> Earth's core, gravity, and the physical integrity of the world.</p>
+        <p><strong>The Law:</strong> <em>The world is finite. It cannot grow, expand, or be added to. The land shall hold together by her eternal will, and nothing shall cause it to dissipate into the Void.</em></p>
+        <p>Aethelgard is the architect of the continent's physical form. Her name became the name of the world itself—a permanent reminder of her sacrifice. Every mountain range is a scar from her stitching. Every Seam Zone is a wound she could not fully close.</p>
+      </div>
+    </details>
+
+    <!-- VALERION -->
+    <img src="Valerion.jpg" alt="Valerion, Goddess of Linear Time" style="width:100%; border-radius:8px; margin:1rem 0;">
+    <details class="nation-details">
+      <summary>
+        VALERION — The Law of Linear Time
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <p><strong>Domain:</strong> The flow of time, the irreversibility of moments.</p>
+        <p><strong>The Law:</strong> <em>The past cannot be repeated. It cannot be changed. Regrets are permanent. Time flows only forward, and what is done is done.</em></p>
+        <p>Valerion's Law is the cruelest mercy. In the Old World, gods could rewind time, undo mistakes, and resurrect the fallen. Valerion ensured that the New World would not repeat those catastrophes. No resurrection exists in Aethelgard. The dead stay dead. Every choice is final.</p>
+      </div>
+    </details>
+
+    <!-- NYXARA -->
+    <img src="Nyxara.jpg" alt="Nyxara, Goddess of Life" style="width:100%; border-radius:8px; margin:1rem 0;">
+    <details class="nation-details">
+      <summary>
+        NYXARA — The Law of Life &amp; The Immune System
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <p><strong>Domain:</strong> Life, flora, fauna, and the world's biological defenses.</p>
+        <p><strong>The Law:</strong> <em>Life shall flourish and defend itself. From the smallest spore to the greatest titan, all living things are part of a sacred, self-correcting balance.</em></p>
+        <p>Nyxara is the mother of monsters. She created the vast, diverse ecology of Aethelgard—not out of malice, but out of desperate necessity. She built an immune system: surface monsters, Behemoths, and in collaboration with the other goddesses, the Leviathans.</p>
+      </div>
+    </details>
+
+    <!-- THANATOS -->
+    <img src="Thanatos.jpg" alt="Thanatos, Goddess of Death" style="width:100%; border-radius:8px; margin:1rem 0;">
+    <details class="nation-details">
+      <summary>
+        THANATOS — The Law of Absolute Finality
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <p><strong>Domain:</strong> Death, souls, and the eternal end.</p>
+        <p><strong>The Law:</strong> <em>There is no reincarnation. No resurrection. No afterlife. When a soul dies, it disintegrates into raw Aether energy and returns to the world. Everything must end.</em></p>
+        <p>Thanatos is the most misunderstood of the Five. She is the ultimate guardian of balance. Thanatos ensured that all beings in Aethelgard—mortal and immortal alike—would eventually face an absolute end.</p>
+      </div>
+    </details>
+
+    <!-- MYSTRA-THOTH -->
+    <img src="Mystra-Thoth.jpg" alt="Mystra-Thoth, Goddess of Magic" style="width:100%; border-radius:8px; margin:1rem 0;">
+    <details class="nation-details">
+      <summary>
+        MYSTRA-THOTH — The Law of Magic &amp; Logic
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <p><strong>Domain:</strong> Magic, Aether, knowledge, and the scientific laws governing the supernatural.</p>
+        <p><strong>The Law:</strong> <em>Magic is not luck. It is not faith. It is an exact, predictable science governed by unbreakable principles. An identical pull from the Weave will always produce an identical result.</em></p>
+        <p>Mystra-Thoth is the great systematizer. She wove the Aether Weave—an invisible, world-spanning network of magical threads—and established the rigid laws that govern it. Aether is recycled soul energy. Every spell cast consumes the remnants of a dead being.</p>
+      </div>
+    </details>
+
+    <h2>The Silent Consensus: Why They Slept</h2>
+    <p>The Five Goddesses did not create the New World out of love for mortals. They created it because the alternative was absolute nothingness. Each goddess wove her own Law not to dominate, but to prevent the mistakes that destroyed the Old World. Then, having given everything, they buried themselves in eternal slumber. They did not ask for worship. They did not leave commandments. They simply... stopped.</p>
+  </div>
+</div>
+
+    <!-- III. The Weave & Aether -->
+    <div id="section-weave-aether" class="wiki-section">
+      <div class="section-title-bar">Aethelgard Wiki — III. The Weave & Aether</div>
+      <div class="section-inner">
+        <h1>III. THE WEAVE & AETHER</h1>
+
+        <h2>The Loom of Reality</h2>
+        <p>The Aether Weave is the invisible skeleton of Aethelgard—a world-spanning network of magical threads that governs all supernatural phenomena. It was designed and implemented by <strong>Mystra-Thoth</strong> and operates with the cold precision of a machine. Magic in this world is not faith. It is not luck. It is an exact, predictable science.</p>
+        <p>Every spell follows the same principle: the caster mentally reaches into the Weave, pulls a specific thread, shapes it with their will, and releases it. An identical pull always produces an identical result.</p>
+
+        <h2>The Nature of Aether</h2>
+        <p><strong>Aether</strong> is the fuel that powers the Weave. It is <strong>recycled soul energy</strong>—when any living being dies, their soul disintegrates (by Thanatos' Law) and returns to the world as raw Aether.</p>
+        <ul>
+          <li><strong>Finite but Renewable:</strong> Aether cannot be created or destroyed—only transferred, consumed, and recycled.</li>
+          <li><strong>Aether Cores:</strong> When monsters die, the Aether within their bodies sometimes crystallizes into solid cores. These function as universal batteries.</li>
+          <li><strong>Dungeon Aether:</strong> Within Dungeons, Aether becomes extremely dense, volatile, and toxic to mortals.</li>
+        </ul>
+
+        <h2>Internal Weave vs. External Weave</h2>
+        <p><strong>Internal Aether Weave:</strong> The safe, personal reservoir of Aether contained within the caster's own body. The capacity of one's Internal Weave determines their Circle.</p>
+        <p><strong>External Aether Weave:</strong> Touching the Greater Weave—the Aether that permeates the world itself. This grants immense power but is extraordinarily dangerous. It attracts lingering Old World grudges and violently accelerates aging. Only the ancient High Races can safely wield it.</p>
+
+        <h2>Affinities</h2>
+        <p>Every soul is born with a natural <strong>Weave Affinity</strong>—an innate resonance with a particular type of magic.</p>
+        <table>
+          <tr><th>Category</th><th>Examples</th></tr>
+          <tr><td>Elemental</td><td>Fire, Water, Earth, Air, Lightning, Ice</td></tr>
+          <tr><td>Physical</td><td>Enhancement, Transformation, Body Reinforcement</td></tr>
+          <tr><td>Soul & Life</td><td>Healing, Empathy, Soul Sensing</td></tr>
+          <tr><td>Death & Curse</td><td>Necromancy, Decay, Curses</td></tr>
+          <tr><td>Mental</td><td>Telepathy, Illusion, Memory Manipulation</td></tr>
+          <tr><td>Space & Time</td><td>Teleportation, Spatial Distortion (requires External Weave)</td></tr>
+          <tr><td>Dungeon & Wound</td><td>Dungeon Manipulation, Corruption (requires External Weave)</td></tr>
+          <tr><td>Holy</td><td>Purification, Divine Channeling, Exorcism</td></tr>
+          <tr><td>Nature</td><td>Flora/Fauna Manipulation, Weather Influence</td></tr>
+          <tr><td>Art & Creation</td><td>Magical Crafting, Golem Creation, Enchantment</td></tr>
+        </table>
+        <p><strong>Rare Dual Affinities:</strong> Some individuals are born with two affinities. Their progression is slower, but the resulting versatility is unmatched.</p>
+
+        <h2>The Ten Circles of Power</h2>
+        <p>All magical ability is measured on a universal scale of ten Circles, defined by the <strong>maximum area a caster can affect, destroy, or dominate when fully exerted</strong>.</p>
+        <table>
+          <tr><th>Circle</th><th>Title</th><th>Threat Level</th><th>Examples</th></tr>
+          <tr><td>1</td><td>Beginner</td><td>An object</td><td>Commoners with minor talent</td></tr>
+          <tr><td>2</td><td>Trained</td><td>An individual</td><td>Professional soldiers, junior adventurers</td></tr>
+          <tr><td>3</td><td>Expert</td><td>A household</td><td>Veteran adventurers, military officers</td></tr>
+          <tr><td>4</td><td>Master</td><td>A neighborhood</td><td>Elite knights, senior guild members</td></tr>
+          <tr><td>5</td><td>Grandmaster</td><td>A village</td><td>Brynn Copperhand, Sera Veldris, Pope Callista III</td></tr>
+          <tr><td>6</td><td>Living Legend</td><td>A town/city</td><td>Darian Vex, Thalanil Silverleaf, Elder Brynja Deepvein</td></tr>
+          <tr><td>7</td><td>Hero</td><td>A major city</td><td>Warlord Varrak Ironhide, Kaelen Ironfang, Demon Commanders</td></tr>
+          <tr><td>8</td><td>Child of Gods</td><td>A region</td><td>The Unraveler, Fallen Angels, Ancient Dragons</td></tr>
+          <tr><td>9</td><td>Godlike</td><td>A continent</td><td>Sylvaris the World-Keeper, eldest Ancient Dragons</td></tr>
+          <tr><td>10</td><td>Divine</td><td>Reality itself</td><td>The Five Goddesses (now slumbering)</td></tr>
+        </table>
+
+        <h2>The Cost of Power</h2>
+        <p>Aether is finite. Every spell cast consumes energy that once belonged to a living soul. Magic in Aethelgard is not a gift. It is a science built on the bones of the dead, governed by laws written by goddesses who never intended to be worshipped. It is reliable, predictable, and utterly unforgiving.</p>
+      </div>
+    </div>
+
+<!-- IV. Geography -->
+<div id="section-geography" class="wiki-section">
+  <div class="section-title-bar">Aethelgard Wiki — IV. Geography</div>
+  <div class="section-inner">
+    <h1>IV. GEOGRAPHY</h1>
+
+    <!-- 1. MOUNTAINS & HIGHLANDS -->
+    <h2>I. Mountains &amp; Highlands</h2>
+
+    <!-- Vorn Mountains -->
+    <img src="Vorn_Mountains.jpeg" alt="Vorn Mountains" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>The Vorn Mountains — The Apex<small class="expand-hint">Tap to Expand</small></summary>
+      <div class="nation-content">
+        <p><strong>Area:</strong> ≈15 million km² | <strong>Location:</strong> Northern continent, stretching from the northwest to the northeast.</p>
+        <p>The Vorn Mountains are the spine of Aethelgard—a titanic, snow-capped wall separating the civilized southern lowlands from the frozen territories that border the northern Void. The peaks are impossibly high, their upper reaches hidden by eternal storms. The range is a vertical world unto itself, hosting civilizations at every elevation: from the deepest subterranean caverns of Kazad-Vorn to the windswept slopes of Vorn-Taraz, from the oath-bound fortress of Gar-Vang in the northwestern foothills to the hidden dragon sanctuary of Nxyaria at the absolute northernmost peak.</p>
+        <p><strong>Anomaly — The Giant's Breath:</strong> A constant, eerie, low-frequency hum resonates through the entire range. Dwarven scholars of Kazad-Vorn believe it is the lingering voices of dead mountain gods from the Old World. Vorn-Taraz engineers dismiss it as geothermal resonance. No one has ever located its source. The hum is loudest at dawn and dusk, and those who spend too long in the deep tunnels sometimes begin to hear words within it—words in languages that have been dead for millennia.</p>
+        <p><strong>Climatic Zones:</strong></p>
+        <ul>
+          <li><strong>Lower Slopes (1,000–3,000m):</strong> Alpine forests, grazing pastures, and the bustling surface cities of Vorn-Taraz.</li>
+          <li><strong>Mid Slopes (3,000–5,000m):</strong> Sparse vegetation, hardy mountain beasts, and fortified Dwarven outposts.</li>
+          <li><strong>Upper Slopes (5,000–7,000m):</strong> Permanent snow, glacial fields, and the hidden entrances to Kazad-Vorn.</li>
+          <li><strong>The Apex (7,000m+):</strong> The death zone. Uninhabitable to all but dragons. The Nameless Peak (Nxyaria) rises here, hidden within eternal storm clouds.</li>
+        </ul>
+        <p><strong>The Three River Sources:</strong> The Vorn glaciers are the birthplace of the continent's three great rivers—the Aethel, the Valer, and the Mystra. Each descends from a different section of the range, carrying Aether-rich glacial melt across the continent.</p>
+        <p><strong>Northern Terminus:</strong> At the absolute northern end of the range, the mountains terminate in sheer, vertical cliffs plunging directly into the frozen northern sea. Beyond the sea lies the Void. The northern cliffs are among the least explored locations in Aethelgard—no civilization exists there, and the cold is lethal even to monsters.</p>
+      </div>
+    </details>
+
+    <!-- Western Hills -->
+    <img src="Western_Hills.jpeg" alt="Western Hills" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>The Western Hills &amp; Iron Valley<small class="expand-hint">Tap to Expand</small></summary>
+      <div class="nation-content">
+        <p><strong>Area:</strong> ≈10 million km² | <strong>Location:</strong> West of the Valley of Kings.</p>
+        <p>A rugged, dry region of rolling rocky terrain and sparse vegetation, serving as a natural buffer between the fertile heartland and the toxic Western Seam Zone. The hills are crisscrossed by deep ravines, abandoned mines, and the scars of ancient skirmishes. The soil is poor for farming but rich in iron and copper—hence the region's name and its strategic importance to the Dwarven forges of Vorn-Taraz.</p>
+        <p><strong>The Iron Valley:</strong> At the heart of the Western Hills lies the most infamous stretch of land in the region. During the Valdris Civil War of 1890 EK, this valley became a slaughterhouse. The soil here is permanently stained a deep, rusted crimson—not from minerals, but from centuries-old blood. Nothing grows in the crimson earth. Nothing is meant to. Ferrostad, the Iron City and capital of the Iron Covenant, rises from this blood-soaked soil as a monument to survival.</p>
+      </div>
+    </details>
+
+    <!-- Eastern Hills -->
+    <img src="Eastern_Hills.jpeg" alt="Eastern Hills" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>The Eastern Hills<small class="expand-hint">Tap to Expand</small></summary>
+      <div class="nation-content">
+        <p><strong>Area:</strong> ≈8 million km² | <strong>Location:</strong> East of the Valley of Kings.</p>
+        <p>A steep, natural barrier separating the fertile Valley of Kings from the untamed expanses of the Eastern Grasslands. The Eastern Hills are sparsely populated, dotted with frontier towns and isolated watchtowers. No major nation claims this territory as its primary domain—it serves as a buffer zone between imperial civilization and the nomadic wilds. The hills are rich in iron and copper deposits, though mining operations are limited by the proximity of the monster-heavy Eastern Grasslands. The Guildhall maintains several waystations along the eastern roads to support adventurers heading toward the Eastern Seam Zone.</p>
+      </div>
+    </details>
+
+    <!-- 2. PLAINS & VALLEYS -->
+    <h2>II. Plains &amp; Valleys</h2>
+
+    <!-- Valley of Kings -->
+    <img src="Valley_of_Kings.jpeg" alt="Valley of Kings" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>The Valley of Kings — The Heartland<small class="expand-hint">Tap to Expand</small></summary>
+      <div class="nation-content">
+        <p><strong>Area:</strong> ≈10 million km² | <strong>Location:</strong> Center of the continent, surrounded by protective hills on all sides.</p>
+        <p>The Valley of Kings is the most fertile land in Aethelgard—the breadbasket of the world. The mighty Aethel River flows through its heart, and its annual floods of up to 5 meters deposit the mineral-rich silt that sustains global agriculture. Rolling fields of golden wheat stretch to every horizon, broken by orderly orchards, fortified granaries, and ancient stone farmhouses. The land feels cultivated, controlled, and ancient—every acre has been farmed for millennia.</p>
+        <p><strong>Climate:</strong> Temperate, with four distinct seasons. Spring brings the river floods and planting season. Summer is dry and hot—peak military campaign season. Autumn sees the harvest and a sharp increase in monster activity. Winter brings frost and occasional snow, though the Valley rarely freezes completely.</p>
+        <p><strong>Strategic Importance:</strong> The Valley produces the food that feeds the continent. It is protected by the Valdran Empire, coveted by the Black Domain, and mediated by the Food Council. Control of the Valley is control of the world. Its loss would mean global starvation. At the Valley's exact center rises Aethelburg, the imperial capital. At its northern edge, directly above The Great Maw, sits Vornhold—the sovereign city of the Guildhall.</p>
+      </div>
+    </details>
+
+    <!-- Eastern Grasslands -->
+    <img src="Eastern_Grasslands.jpeg" alt="Eastern Grasslands" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>The Eastern Grasslands<small class="expand-hint">Tap to Expand</small></summary>
+      <div class="nation-content">
+        <p><strong>Area:</strong> Vast and unbounded, constantly shifting due to Behemoth migration | <strong>Location:</strong> East of the Eastern Hills, west of the Eastern Seam Zone.</p>
+        <p>An endless, unforgiving sea of waist-high golden grass stretching to the horizon and beyond. The terrain is completely open and exposed—no mountains, no forests, no natural shelter. The grass itself is tough and sharp-edged, capable of cutting exposed skin after hours of travel. Scattered groves of iron-barked Akasia trees and shallow, Aether-tinged lakes break the monotony, serving as vital oases for beast and nomad alike.</p>
+        <p><strong>Climate:</strong> Harsh and extreme. Summers are scorching, with temperatures exceeding 45°C. Winters are brutal, with howling winds and temperatures dropping well below freezing. There is no gentle spring or mild autumn—only burning heat and freezing cold.</p>
+        <p><strong>Anomaly — The Walking Mountains:</strong> The Grasslands are home to the highest concentration of Behemoths in Aethelgard. Some of these living geological titans are so vast that entire forests grow upon their backs and clouds scrape their shoulders. They migrate slowly across the plains, reshaping the map with every step. The Pack reveres them as sacred heralds. Cartographers have learned to map the Grasslands in eras rather than years—a map from one decade may be entirely obsolete the next.</p>
+        <p><strong>Inhabitants:</strong> The only permanent residents are The Pack, a society of militant nomadic Werebeasts who follow the great beast herds and survive through absolute physical perfection and unparalleled hunting skill. They have no cities, no farms, and no walls—only their tents, their weapons, and their oaths.</p>
+      </div>
+    </details>
+
+    <!-- 3. FORESTS -->
+    <h2>III. Forests</h2>
+
+    <!-- Primeval Forest -->
+    <img src="Primeval_Forest.jpeg" alt="Primeval Forest" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>The Primeval Forest<small class="expand-hint">Tap to Expand</small></summary>
+      <div class="nation-content">
+        <p><strong>Area:</strong> ≈28 million km² | <strong>Location:</strong> Dominating the southern continent.</p>
+        <p>The Primeval Forest is the oldest woodland in Aethelgard—older than most civilizations, older than the New World itself in some forgotten sense. Its towering trees are as ancient as the stitched reality, their roots reaching down into soil that remembers the Old World. The forest is not merely alive; it is conscious, humming with the melancholic, magical echoes of a ruined era.</p>
+        <p><strong>The Canopy:</strong> In many regions, the forest canopy is so dense that entire cities vanish beneath it. Sunlight reaches the forest floor in scattered, golden shafts. The air is thick with the scent of moss, ancient wood, and a faint, inexplicable sweetness—the smell of memories.</p>
+        <p><strong>Anomaly — The Singing Leaves:</strong> Every leaf, every branch, every root vibrates with a constant, barely audible song. The Aelderim Elves describe it as the forest remembering. Outsiders who spend too long beneath the canopy report hearing voices in the song—voices speaking in languages that have been dead for millennia. Some go mad. Some become prophets. Most simply leave and never return.</p>
+        <p><strong>Civilizations Within:</strong> At the forest's heart, the Elves of <strong>Aelderim</strong> guard the World Tree and the complete, unedited memories of history. To the west, the pacifist Werebeasts of <strong>Verdantus</strong> keep their sacred vow of peace within the sanctuary city of Greenholt. To the east, the progressive Elves of <strong>Sol-Ventari</strong> burn the archives of the past and build a new future among scattered, fluid communities.</p>
+      </div>
+    </details>
+
+    <!-- 4. SEAM ZONES -->
+    <h2>IV. The Seam Zones</h2>
+    <p>The Seam Zones are the surgical stitches where the Five Goddesses forcibly grafted incompatible fragments of the Old World together. Physics breaks here. Gravity shifts without warning. Time stutters. Maps become unreliable within hours. Travel through any Seam Zone is approximately <strong>twice as slow</strong> and <strong>twice as dangerous</strong> as normal terrain.</p>
+    <p>To enter a Seam Zone is to walk upon a wound that is still bleeding. The air tastes metallic, like blood and lightning. The sky is never the right color—bruised purple, sickly green, or a churning grey that seems to look back at you. Sound travels strangely: a whisper may carry for kilometers, while a shout dies inches from the mouth.</p>
+
+    <!-- Western Seam Zone -->
+    <img src="Western_Seam_Zone.jpeg" alt="Western Seam Zone" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>The Western Seam Zone — The Frontline<small class="expand-hint">Tap to Expand</small></summary>
+      <div class="nation-content">
+        <p><strong>Area:</strong> ≈9 million km² | <strong>Location:</strong> Stretching between the Western Hills and the Black Domain.</p>
+        <p>An arid, toxic wasteland composed of ancient, highly toxic battlefields from the Primordial War. The cursed soil perpetually seeps ancient toxins into the air. Gravity fluctuates wildly within mere meters—a traveler may weigh twice their normal weight in one step and half in the next. Spatial distortions make navigation treacherous; landmarks shift, distances stretch and compress, and experienced guides sometimes find themselves walking in circles.</p>
+        <p><strong>Dungeon Concentration:</strong> The Western Seam Zone has a dangerously high concentration of Dungeon manifestations. Ranging from low-tier to apocalyptic, these Dungeons constantly threaten to overflow into the Sovereign Domains.</p>
+        <p><strong>The Sky:</strong> The sky above the Western Seam Zone is never clear. It is perpetually choked with dust, Aether-leaks, and the faint, permanent glow of magical contamination. The cracked aurora of the Old World is most visible here, pulsing in sickly greens and purples.</p>
+        <p><strong>Strategic Function:</strong> The entire zone operates as a colossal natural fortress, and the <strong>Theocracy of the Sacred Wound</strong> has made it their sacred duty to hold this line. They are the absolute last shield preventing demonic expansion into the fertile Valley of Kings. For nearly three thousand years, they have fought and died upon ground that has never known peace.</p>
+      </div>
+    </details>
+
+    <!-- Eastern Seam Zone -->
+    <img src="Eastern_Seam_Zone.jpeg" alt="Eastern Seam Zone" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>The Eastern Seam Zone — Chaos Uncharted<small class="expand-hint">Tap to Expand</small></summary>
+      <div class="nation-content">
+        <p><strong>Area:</strong> ≈18 million km² | <strong>Location:</strong> East of the Grasslands, stretching to the eastern sea.</p>
+        <p>The Eastern Seam Zone is the most Dungeon-dense region in all Aethelgard. While less politically contested than its western counterpart, it is arguably more dangerous due to the sheer concentration of reality wounds. The terrain is a chaotic patchwork—deserts adjacent to frozen tundra, forests growing upside-down, and rivers that flow uphill. No permanent settlements exist here. Only expedition camps that are abandoned before the next Dungeon Break consumes them.</p>
+        <p><strong>Anomalies:</strong></p>
+        <ul>
+          <li><strong>Upward-Falling Rain:</strong> Precipitation that falls from the ground and rises into the sky.</li>
+          <li><strong>Reversed Waterfalls:</strong> Water that flows up cliff faces rather than down.</li>
+          <li><strong>Ground Clouds:</strong> Mist and cloud formations that exist below ground level, filling deep ravines with permanent, impenetrable fog.</li>
+          <li><strong>Walking Formations:</strong> Smaller geological formations—boulders, cliffs, small hills—that physically move when unobserved. Travelers who camp in the same spot for two nights sometimes wake to find the landscape completely rearranged.</li>
+        </ul>
+        <p><strong>Strategic Importance:</strong> Despite its lethality, the Eastern Seam Zone is the primary source of lucrative contracts for the Guildhall. Adventurers flock to its Dungeons seeking Old World artifacts and Aether Cores of exceptional quality. The mortality rate is catastrophic. The rewards are legendary. The Valer River tributary is the only reliable route through this chaos, and only the bravest—or most desperate—expeditions dare to follow it.</p>
+      </div>
+    </details>
+
+<!-- 5. SEAS & THE VOID -->
+<h2>V. The Seas &amp; The Void</h2>
+<p>Aethelgard is not merely bordered by ocean. It is a single, finite continent adrift in a vast, unmapped marine expanse that rivals the landmass itself in scale—possibly exceeds it. The Five Goddesses placed the continent as far from the Void as their failing power allowed. What fills the space between is a world of water, darkness, and silence. No one has ever crossed it. No one knows what lies in its deepest trenches.</p>
+
+<!-- Coastal Zone -->
+<img src="Coastal_Zone.jpeg" alt="Coastal Zone" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+<details class="nation-details">
+  <summary>The Coastal Zone (0–50 km)<small class="expand-hint">Tap to Expand</small></summary>
+  <div class="nation-content">
+    <p>Blue-green waters, mild waves, seasonal storms. Safe enough for fishing vessels and merchant ships. Small sea monsters—Aether-eels, razorfins, juvenile serpents—are common but manageable. This is the only zone where regular trade by sea is viable. Most ships never leave it.</p>
+  </div>
+</details>
+
+<!-- Twilight Zone -->
+<img src="Twilight_Zone.jpeg" alt="Twilight Zone" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+<details class="nation-details">
+  <summary>The Twilight Zone (50–500 km)<small class="expand-hint">Tap to Expand</small></summary>
+  <div class="nation-content">
+    <p>The water darkens to a murky grey. Sunlight begins to fail. Waves grow heavier and unpredictable. Storms brew without warning. This is the domain of <strong>Krakens</strong>—massive cephalopods ranging from the size of a merchant ship to over two hundred meters in length. Armed military convoys dare these waters on occasion, hunting for deep-sea Aether Cores or pursuing rumors of Old World ruins on the seabed. Civilian ships do not enter.</p>
+  </div>
+</details>
+
+<!-- Black Zone -->
+<img src="Black_Zone.jpeg" alt="Black Zone" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+<details class="nation-details">
+  <summary>The Black Zone (500–5,000+ km)<small class="expand-hint">Tap to Expand</small></summary>
+  <div class="nation-content">
+    <p>Pitch black and terrifyingly silent. Waves can reach the height of castle walls. The wind howls with a voice that sounds almost human. Storms are constant—the sky and sea merge into a single, churning darkness. This is the hunting ground of the <strong>Greater Leviathans</strong>. No Guildhall expedition has ever crossed the Black Zone and returned. What lies in its deepest trenches is unknown. Some scholars speculate there are things older than the Five Goddesses sleeping in the abyss.</p>
+  </div>
+</details>
+
+<!-- Abyssal Zone -->
+<img src="Abyssal_Zone.jpeg" alt="Abyssal Zone" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+<details class="nation-details">
+  <summary>The Abyssal Zone (5,000+ km) — Unconfirmed<small class="expand-hint">Tap to Expand</small></summary>
+  <div class="nation-content">
+    <p><strong>Theoretical.</strong> No one has ever reached this zone and returned to confirm its existence. Based on Aether-density readings and the testimonies of maddened sailors, some Theocracy scholars believe there is a zone beyond the Black Zone where the ocean floor simply... ends. A vertical drop into nothing. The <strong>World-Enders</strong> patrol here. What lies beyond them is not water. It is the threshold of the Void.</p>
+  </div>
+</details>
+
+<!-- The Void -->
+<img src="The_Void.jpeg" alt="The Void" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+<details class="nation-details">
+  <summary>The Void — Absolute Erasure<small class="expand-hint">Tap to Expand</small></summary>
+  <div class="nation-content">
+    <p>The absolute edge of reality. No water. No sky. No light. Only a bottomless, cascading emptiness where existence ceases. The Leviathans circle this boundary eternally, their silhouettes visible against the nothingness. To sail into the Void is not to die—it is to be <strong>erased from memory and history</strong> as if you had never existed.</p>
+  </div>
+</details>
+
+<!-- The Mystery of the Deep -->
+<img src="Mystery_of_the_Deep.jpeg" alt="The Deep Ocean" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+<details class="nation-details">
+  <summary>The Mystery of the Deep<small class="expand-hint">Tap to Expand</small></summary>
+  <div class="nation-content">
+    <p>With an ocean this vast, no one in Aethelgard can claim to know what lies beneath the surface. The Theocracy maintains fragmentary records of sonar contacts—shapes larger than any known Leviathan, moving slowly in the abyss. The Noctisian archives contain references to <em>"those who chose the sea"</em> during the Sundering—vampires who fled not south, but downward. The Guildhall has a single, water-damaged log from the <em>Horizon's End</em> expedition, describing <em>"lights, moving in formation, kilometers below the keel."</em> No official investigation has ever been launched. The sea keeps its secrets.</p>
+  </div>
+</details>
+
+    <!-- Topographical Summary -->
+    <h2>VI. Topographical Summary</h2>
+    <table>
+      <tr><th>Direction</th><th>Region</th><th>Character</th></tr>
+      <tr><td>⬆ NORTH</td><td>Vorn Mountains</td><td>High, snowy, vertical—the spine and water source of the continent</td></tr>
+      <tr><td>🟌 CENTER</td><td>Valley of Kings</td><td>Fertile, civilized, populous—the heartland and breadbasket</td></tr>
+      <tr><td>⬅ WEST</td><td>Western Hills → Western Seam Zone → Black Domain</td><td>Increasing instability: from rugged buffer to reality-wound to demonic wasteland</td></tr>
+      <tr><td>➡ EAST</td><td>Eastern Hills → Eastern Grasslands → Eastern Seam Zone</td><td>Sparse settlement to nomadic wilds to Dungeon-dense death zone</td></tr>
+      <tr><td>⬇ SOUTH</td><td>Primeval Forest</td><td>Ancient, magical, memory-soaked—the oldest living land</td></tr>
+      <tr><td>↖ NORTHWEST</td><td>Gar-Vang (foothills)</td><td>Harsh Orc territory, sacred oaths</td></tr>
+      <tr><td>↓ OFFSHORE SOUTH</td><td>Noctisia</td><td>Hidden vampire island behind sentient mist</td></tr>
+    </table>
+
+  </div>
+</div>
+
+    <!-- V. Nations & Factions -->
+<div id="section-nations" class="wiki-section">
+  <div class="section-title-bar">Aethelgard Wiki — V. Nations & Factions</div>
+  <div class="section-inner">
+    <h1>V. NATIONS & FACTIONS</h1>
+
+    <!-- FOOD COUNCIL -->
+    <img src="Food_Council.jpeg" alt="Food Council" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        FOOD COUNCIL — The Shield Against Starvation
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <p>The Food Council is a vital supranational diplomatic body forged to prevent global starvation. Its creation was born from a terrifying realization: every race and civilization in Aethelgard depends entirely on the harvests from the Valley of Kings. In the year 1890 EK, the historic Treaty of Aethelburg was signed by nine major nations, conspicuously excluding the Black Domain. This grand treaty solidified a singular and unbreakable law: food must forever remain a shared right of survival, never to be wielded as a political weapon.</p>
+        
+        <h3>I. Council Structure and Governance</h3>
+        <p><strong>Equal Representation:</strong> Each of the nine signatory nations holds exactly one seat on the council. All global agricultural decisions are determined strictly by a majority vote.</p>
+        <p><strong>Neutral Ground:</strong> Council assemblies take place in a specialized hall within Aethelburg but built deliberately outside the walls of the imperial palace. This specific architectural choice serves as a permanent reminder that the Emperor does not own the food of the world.</p>
+        <p><strong>The Absence of Imperial Veto:</strong> Despite the fact that the entire world's breadbasket grows on their sovereign soil, the Valdran Empire holds no absolute veto power whatsoever in matters of global food distribution.</p>
+        
+        <h3>II. Functions and Absolute Powers</h3>
+        <p><strong>Emergency Food Rationing:</strong> During times of sudden crop failure or unforeseen natural disaster, the council convenes emergency sessions to coordinate global aid and establish strict rationing protocols.</p>
+        <p><strong>Market and Price Control:</strong> The council wields the absolute authority to prevent the monopolization or inflation of grain and other vital necessities.</p>
+        <p><strong>Conflict Mediation:</strong> The body acts as an untouchable neutral party whenever territorial disputes or rising political tensions threaten crucial agricultural lands or essential trade routes.</p>
+      </div>
+    </details>
+
+    <!-- 1. BLACK DOMAIN -->
+    <img src="Black_Domain.jpeg" alt="Black Domain" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        1. BLACK DOMAIN
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> The far western edge of the continent, directly across the treacherous Western Seam Zone. Bordered by the Black Zone of the Western Sea to the west, the freezing Vorn Mountains to the north, and the Southern Sea to the south. Theocracy of the Sacred Wound/Western Seam Zone to the east.</p>
+        <p><strong>Area:</strong> 24 million square kilometers. The second largest territory in Aethelgard, exceeded only by the Valdran Empire.</p>
+        <p><strong>Condition:</strong> A wasteland of barren black soil. This was the largest battlefield of the Primordial War, and the cursed ground perpetually seeps ancient toxins. There are zero natural resources, zero agriculture, and no valuable minerals. The inhabitants survive almost entirely on harvested monster meat.</p>
+        <p><strong>Anomalies:</strong> A suffocating aura of death envelops the entire region. Phantom sounds of clashing weapons and ancient slaughter echo directly from the earth. The sky is eternally stained a deep, unnatural red or dark purple.</p>
+        <p><strong>Capital:</strong> Malakh-Kar, the silent and imposing fortress city where The First King slumbers in the deepest abyss.</p>
+        
+        <h3>II. History</h3>
+        <p>The Black Domain was forged in the fires of The First Great War (1500–1715 EK). The First King rallied the demon race and all the rejected ones of the world, launching a devastating campaign that nearly drove the other races to extinction.</p>
+        <p>The relentless conquest was halted at the Battle of Malakh-Kar in 1715 EK. The First King fought seven legendary Heroes simultaneously, killing four, before collapsing from sheer exhaustion into an eternal slumber beneath his capital. Of the 12 Demon Commanders who clashed with the 7 Fallen Angels in a parallel battle, only five survived: The Unraveler, Vorlag, Kazagar, Gorath, and Zar'goth. Three Fallen Angels fell.</p>
+        <p>Ever since that historic defeat, the surviving demons have been confined to this desolate territory. Led by The Unraveler—who has since appointed four new Commanders: Alleen, Silphira, Vexia, and Nuva—the demons are bound by a fanatical public doctrine: the stitched-together New World is a false prison that must be entirely destroyed.</p>
+        <p>Whether The Unraveler herself believes this doctrine is known only to one.</p>
+        
+        <h3>III. Government & Power Structure</h3>
+        <p><strong>Form of Governance:</strong> Absolute Military Dictatorship.</p>
+        <p><strong>Apex Leader:</strong> The Unraveler, the supreme Demon King. Weave Level: 8–9. She holds unquestionable, absolute authority over all aspects of the domain.</p>
+        <p><strong>Eight Commanders:</strong> Each wields immense Weave Levels ranging from 6 to 8. They control military might, covert intelligence, and grand strategy beneath her. The hierarchy is a brutal meritocracy based strictly on raw power and seniority.</p>
+        <p><strong>Hidden Faction:</strong> The Revisionist Faction. Founded in absolute secrecy by Commander Vexia, this underground movement quietly questions the exhausting doctrine of eternal war. Discovery means certain death.</p>
+        
+        <h3>IV. Key Characteristics</h3>
+        <ul>
+          <li><strong>Genetic Memory:</strong> Every demon is born with 5,000 years of accumulated combat knowledge and tactical instinct. They know how to kill without being taught.</li>
+          <li><strong>Old World Arsenal:</strong> An astonishing 70% of their original Old World weaponry remains fully functional—beam-lances, toxic-gas dispersers, and mechanized golems. This grants them a terrifying technological advantage.</li>
+          <li><strong>Shadow Economy:</strong> The domain relies desperately on food imports smuggled through global black markets. To pay for survival, they illegally export ancient weapons and dark magic to rogue factions like the Iron Covenant.</li>
+          <li><strong>Demographics:</strong> Almost exclusively Pure Demon. A sparse few zealously loyal—or tragically oppressed—members of other races exist at the margins.</li>
+        </ul>
+        
+        <h3>V. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> There are no paved roads and no trade caravans. Only shattered remnants of Old World routes, barely maintained, cross the wasteland. Travel within the domain is a test of endurance and will.</p>
+        <p><strong>Transportation:</strong> The demon race relies on their superior physicality for mobility. Commanders and elite forces ride tamed war-beasts—hulking predators twisted by Aether and Old World exposure. No Aether-wagons exist here. No beasts of burden in the traditional sense. Speed and ferocity replace comfort.</p>
+        <p><strong>Energy & Sustenance:</strong> Low-grade Aether Cores harvested from the Western Seam Zone power the brutal forges of Malakh-Kar. Food is exclusively monster meat, hunted and strictly rationed. There are no farms. No grain silos. Every meal is a reminder of what the domain has lost.</p>
+      </div>
+    </details>
+
+    <!-- 2. THEOCRACY OF THE SACRED WOUND -->
+    <img src="Theocracy.jpeg" alt="Theocracy of the Sacred Wound" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        2. THEOCRACY OF THE SACRED WOUND
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> Positioned directly inside the volatile Western Seam Zone. It stands as a physical barrier, bordering the terrifying Black Domain to the west and the Western Hills—domain of the Iron Covenant—to the east.</p>
+        <p><strong>Area:</strong> 9 million square kilometers of treacherous, broken terrain.</p>
+        <p><strong>Condition:</strong> A brutal wasteland composed of ancient, highly toxic battlefields. The laws of physics are broken and inconsistent—gravity shifts wildly within mere meters, and spatial distortions make maps unreliable. The territory suffers from a dangerously high concentration of Dungeon manifestations. The sky is never clear, choked with dust, Aether-leaks, and the faint, permanent glow of magical contamination.</p>
+        <p><strong>Strategic Function:</strong> The entire nation operates as a colossal living fortress. It is the absolute last shield preventing the demonic expansion of the Black Domain from spilling into the fertile Valley of Kings. The Theocracy does not merely guard a border—it is the border.</p>
+        <p><strong>Capital:</strong> Lumina Aeterna, the city of enduring Light.</p>
+        
+        <h3>II. History</h3>
+        <p>The nation was established in 1730 EK by four Fallen Angels who miraculously survived the apocalyptic First Great War. They did not retreat to safety. They marched toward the wound.</p>
+        <p>Their defining belief is brutally pragmatic: there is no heaven, and the gods are dead. The followers fully embrace the bitter reality that their world is fundamentally flawed and permanently abandoned by its creators. Yet they do not despair. They fight. They believe that if no gods remain to protect the world, then mortals must protect each other.</p>
+        <p>They are locked in a grueling, endless war against the forces of the Black Domain, shedding blood every single day along the bleeding edge of the Western Seam Zone. For nearly three thousand years, the Theocracy has held the line.</p>
+        
+        <h3>III. Government & Power Structure</h3>
+        <p><strong>Form of Governance:</strong> An Elective Theocracy.</p>
+        <p><strong>Apex Leaders:</strong> Pope Callista III—a Demihuman and former slave—guides the realm. She is directly assisted by the four surviving Fallen Angels, who serve as supreme spiritual and military advisors.</p>
+        <p><strong>Hierarchical Structure:</strong> The Pope is carefully chosen through a conclave of high clergy and the Angels. These celestial beings do not rule—they advise, guide, and when necessary, fight. Their wisdom is ancient, and their presence is the Theocracy's greatest spiritual weapon.</p>
+        <p><strong>Internal Factions:</strong></p>
+        <ul>
+          <li><strong>The Hardliners:</strong> A militant sect demanding total war, absolute eradication of the demons, and the complete conquest of the Black Domain. For them, mercy is heresy.</li>
+          <li><strong>The Peace Faction:</strong> A desperate and quiet minority seeking any viable diplomatic path toward a lasting ceasefire. They are small, suppressed, and viewed with deep suspicion.</li>
+          <li><strong>The Missionary Faction:</strong> Zealots determined to spread their grim doctrine of divine abandonment and self-reliance to the rest of the continent. Most nations find them unsettling. The Sanctum Aeternum finds them dangerous.</li>
+        </ul>
+        
+        <h3>IV. Key Characteristics & Holy Sites</h3>
+        <ul>
+          <li><strong>The Roofless Cathedrals:</strong> Every grand place of worship is built completely exposed to the sky. This serves as a powerful architectural symbol of their grim acceptance that absolutely nothing protects them from above anymore. Rain falls on the altars. Ash settles on the pews. The faithful pray to an open sky and expect no answer.</li>
+          <li><strong>The Wound Room:</strong> A highly classified, sacred chamber used by the highest echelon to constantly monitor the planetary injuries of Aethelgard. Here, the Fallen Angels and the Pope track the volatile fluctuations of Dungeons and the expanding Seam Zones. The Wound Room is the Theocracy's greatest secret.</li>
+          <li><strong>The Sacred Guard:</strong> The highly disciplined and massive regular army of the Theocracy. Every soldier knows they may never leave the Seam Zone. They fight anyway.</li>
+          <li><strong>The Hands of Suffering:</strong> The ultimate elite forces. These are battle-hardened veterans who have survived active duty on the brutal western border for over ten agonizing years. They are few in number, but each is worth a battalion.</li>
+          <li><strong>The Fatal Dependency:</strong> Stationed entirely on toxic, barren land, the military and citizens rely absolutely on the Food Council. They depend entirely on grain imports from the Valdran Empire and the merchant routes of Vorn-Taraz. If those supply lines were ever cut, their holy army would starve to death within weeks. The Theocracy fights the demons. Valdran feeds the Theocracy. The chain is unbreakable—and terrifyingly fragile.</li>
+        </ul>
+        
+        <h3>V. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> The roads of the Theocracy are maintained for one purpose: military logistics. Paved with crushed stone and regularly repaired despite the Seam Zone's distortions, they connect the capital to the border fortresses and supply depots. They are not smooth, not beautiful, and not safe—but they are functional. Waystations are heavily fortified, serving as both supply points and fallback positions.</p>
+        <p><strong>Transportation:</strong> The Seam Zone's unstable physics make complex Aether-vehicles unreliable. The Theocracy relies instead on tamed war-beasts bred for endurance and aggression: massive Saltherions, six-legged lizards native to the Seam Zone that can carry heavy loads across broken ground, and armored Bore-Wyrms, tunneling beasts that can transport squads through unstable terrain. For rapid cavalry deployment, the Sacred Guard rides Ash-Manes—hardened horses bred in the toxic environment. Aether-wagons exist in limited numbers for high-priority military logistics, but they are not the backbone of Theocracy transport. Muscle and beast, not machine, hold this line.</p>
+        <p><strong>Energy & Sustenance:</strong> Aether Cores are harvested from the Dungeons that constantly breach across the Seam Zone, providing a grim but steady supply of power. These cores fuel the Wound Room, the forges of Lumina Aeterna, and the defensive systems of the border fortresses. Food is the Theocracy's eternal vulnerability. Almost nothing grows in the Seam Zone's toxic soil. Every loaf of bread, every sack of grain, every dried ration arrives via Valdran merchants or Vorn-Taraz caravans. The Theocracy fights. Valdran feeds. Vorn-Taraz arms. The Western Axis is a chain of mutual survival.</p>
+      </div>
+    </details>
+
+    <!-- 3. GAR-VANG -->
+    <img src="Gar-Vang.jpeg" alt="Gar-Vang" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        3. GAR-VANG
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> The harsh northwest of the continent, anchored securely at the rocky foothills of the imposing Vorn Mountains, near where the Mystra River begins its uncanny journey.</p>
+        <p><strong>Area:</strong> 12 million square kilometers of massive and rugged highlands.</p>
+        <p><strong>Condition:</strong> A harsh, unforgiving domain composed entirely of rocky highlands and steep mountain valleys. The climate is brutal—winters bite deep and summers are short. Yet their close proximity to the magical source of the Mystra River grants the entire region access to incredibly potent Aether. The land is poor for crops but rich in spirit. The sky is wide, the wind is constant, and the stone beneath their feet is ancient.</p>
+        <p><strong>Capital:</strong> Gar-Durak, a fortress city carved from the bones of the earth.</p>
+        
+        <h3>II. History</h3>
+        <p>The nation was officially founded in Year 23 EK by the legendary figure Alsaktar, who gathered the scattered Orc race shortly after the physical formation of the New World.</p>
+        <p>The Orcs were originally created by the deceased God of War from the Old World—born without any clear purpose other than to wage endless, mindless slaughter. They were weapons. They were never meant to be a people. Following the death of their creator god, the Orc nation rejected their violent destiny and consciously chose a new, noble purpose: to become the ultimate guardians of the world they were made to destroy.</p>
+        <p><strong>The Sacred Oath:</strong> Every warrior binds their soul to a single vow: "We will not let what happened to us happen to others."</p>
+        <p>Throughout the bloody history of Aethelgard, the Orcs of Gar-Vang have participated in countless major conflicts, strictly fighting on the defensive side to protect the innocent and uphold the balance. They do not start wars. They end them.</p>
+        
+        <h3>III. Government & Guiding Philosophy</h3>
+        <p><strong>Form of Governance:</strong> A Meritocratic Council of Veterans.</p>
+        <p><strong>Apex Leader:</strong> Warlord Varrak Ironhide—a massive and seasoned Orc warrior, 320 years old, wielding an immense Weave level of 7. He earned his title not through bloodline or politics, but through decades of unbroken victory and unshakable honor.</p>
+        <p><strong>Hierarchical Structure:</strong> While Warlord Varrak holds ultimate command, all monumental decisions are carefully debated with a grand council consisting of the oldest, wisest, and most respected war veterans in the territory. The young may speak, but the old decide.</p>
+        <p><strong>The Philosophy of War:</strong> The Orcs of Gar-Vang operate on pure, cold professionalism rather than blind hatred. They fight strictly out of sacred duty and unbreakable oaths, never out of uncontrollable anger. An Orc who loses control in battle has failed the oath.</p>
+        
+        <h3>IV. Key Characteristics & Military Might</h3>
+        <ul>
+          <li><strong>The Legacy of Alsaktar:</strong> The nation boasts a specialized unit of absolute elite troops, preserving the flawless combat techniques inherited directly from their ancient founder. To be inducted into Alsaktar's Legacy is the highest honor an Orc can achieve short of the Warlord's mantle.</li>
+          <li><strong>The Controlled Berserker:</strong> The ancient technique that proves the Orcs' triumph over their mindless origins. It massively amplifies physical strength while maintaining perfect consciousness, discipline, and tactical awareness. The Orc becomes stronger, faster, and more lethal—but never loses themselves. This is the pride of Gar-Vang.</li>
+          <li><strong>The Great Exodus:</strong> The population is slowly aging as many young Orcs leave the mountains seeking greater challenges, broader horizons, or better pay within the Iron Covenant or the Guildhall. Warlord Varrak openly permits this exodus, believing that an Orc can carry their sacred oaths with them wherever they walk.</li>
+          <li><strong>The Mountain Economy:</strong> Survival relies on expert hunting and a vital trade alliance with the Dwarves of Vorn-Taraz. The Orcs exchange rare mountain resources—monster hides, Aether-rich minerals, and ancient ores—for heavy weapons and masterwork Dwarven equipment.</li>
+          <li><strong>Military Doctrine:</strong> Cold professionalism. Impenetrable defense. The Orcs of Gar-Vang do not attack. They wait. They hold. And when the enemy has exhausted themselves against the shield-wall, they advance.</li>
+        </ul>
+        
+        <h3>V. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> The roads of Gar-Vang are carved from the mountain itself—functional, enduring, and built to last centuries. They connect the fortress-cities and highland valleys, designed for the movement of troops and supplies rather than commerce. They are steep, narrow in places, and often treacherous to outsiders unfamiliar with the terrain. The Orcs need no guideposts. The mountain speaks to them.</p>
+        <p><strong>Transportation:</strong> Gar-Vang is a nation of foot and beast. The Orcs march—tirelessly, relentlessly—across terrain that would exhaust other races. For heavy transport, they use tamed Stone Rams, massive mountain goats with horns like battering rams, capable of carrying supplies up near-vertical slopes. For war, the elite ride Dire Wolves bred in the high valleys, their howls echoing across the peaks. Aether-wagons exist in only the smallest numbers, purchased from Vorn-Taraz for the transport of especially heavy ores and weapons. The Orcs do not love machines. They trust muscle, bone, and the strength of their own backs.</p>
+        <p><strong>Energy & Sustenance:</strong> Aether Cores, potent from the Mystra source, power the forges of Gar-Durak and heat the fortress cities through brutal winters. Food comes from hunting—the highlands teem with mountain beasts—and from small, hardy livestock raised in the valleys. The Orcs do not farm in the traditional sense. They hunt, they herd, and they trade monster meat and rare ores to Vorn-Taraz for the grain they cannot grow. An Orc does not beg for bread. They earn it with steel.</p>
+      </div>
+    </details>
+
+    <!-- 4. IRON COVENANT -->
+    <img src="Iron_Covenant.jpeg" alt="Iron Covenant" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        4. IRON COVENANT
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> The unforgiving Western Hills, centralized within the infamous Iron Valley. The terrain is defined by dry hills and jagged rocky landscapes that offer natural fortification.</p>
+        <p><strong>The Crimson Earth:</strong> The soil of the Iron Valley is famously blood-red and rust-colored, forever stained by the horrific bloodshed of the Valdris Civil War. Nothing grows in the crimson earth. Nothing is meant to.</p>
+        <p><strong>Area:</strong> 3 million square kilometers. Compact but heavily fortified.</p>
+        <p><strong>Borders:</strong> Strategically boxed in—the fertile Valley of Kings to the east, the chaotic Western Seam Zone to the west, the Orcish guardian state of Gar-Vang to the north, Verdantus to the south. Every neighbor is either a client, a threat, or a reminder of what the Covenant is not.</p>
+        <p><strong>Capital:</strong> Ferrostad, universally known across the continent as the Iron City.</p>
+        
+        <h3>II. History</h3>
+        <p>The faction was born from the ashes of the Valdris Civil War in 1890 EK. It became a harsh sanctuary where members of all races who were rejected, stripped of their homelands, or simply desperate for a new life gathered to survive.</p>
+        <p>The syndicate was officially founded by a visionary Half-Orc known only as The First Link. He established the nation upon a single, brutal philosophy: power is taken, never inherited.</p>
+        <p>After six hundred years of operating in the shadows, the Covenant proudly declared itself a fully sovereign state in 2400 EK. They are not merely a band of mercenaries. They are a flawlessly professional syndicate bound entirely by the absolute sanctity of the contract. In the Covenant, a broken contract is the only unforgivable sin.</p>
+        
+        <h3>III. Government & Power Structure</h3>
+        <p><strong>Form of Governance:</strong> A highly organized Mercenary Syndicate ruled by an elite council known as The Chain.</p>
+        <p><strong>Apex Leaders:</strong> The Chain consists of the seven highest-ranking individuals, known as Links. A seat on the council cannot be inherited—it is earned through surviving brutal internal challenges or accumulating a legendary portfolio of successful contracts and military achievements.</p>
+        <p><strong>The Current Links:</strong></p>
+        <ul>
+          <li><strong>Kaelen (The Link of War):</strong> Supreme military commander of the syndicate forces.</li>
+          <li><strong>Specter Seven (The Link of Shadow):</strong> Master of intelligence gathering and covert assassination. True identity unknown.</li>
+          <li><strong>Vexis (The Link of Coin):</strong> Controller of the Covenant's immense finances and logistics.</li>
+          <li><strong>Brynn (The Link of Iron):</strong> Director of technology and weaponry. Also serves as Lord Merchant of Vorn-Taraz.</li>
+          <li><strong>Sera (The Link of Blood):</strong> Harsh overseer of all martial training and global recruitment.</li>
+          <li><strong>Mikhail (The Link of Bone):</strong> A vampire exiled from Noctisia, leading the most classified special operations.</li>
+          <li><strong>The Empty Seat:</strong> The seventh position on The Chain remains ominously vacant.</li>
+        </ul>
+        
+        <h3>IV. Key Characteristics & Global Influence</h3>
+        <ul>
+          <li><strong>The Absolute Professional Philosophy:</strong> The ultimate law of the Covenant dictates that a warrior must kill based strictly on the contract, never out of personal hatred, vengeance, or passion. Because of this terrifying neutrality, they are universally despised by the public yet constantly hired by every royal court and sovereign nation in Aethelgard. They are the necessary evil no one admits they need.</li>
+          <li><strong>The Counting House:</strong> A monumental eight-story central bank located in the heart of Ferrostad. So utterly secure that it quietly manages the hidden finances and war chests of numerous global empires. The mercenaries guard the gold, and the gold buys the mercenaries.</li>
+          <li><strong>The Fatal Dependency:</strong> The Covenant possesses absolutely zero agriculture and zero manufacturing capabilities. The entire nation lives on the wages of war, using immense wealth to purchase all basic necessities—especially food from the Valley of Kings. A blockade of the Iron Valley would not require a single arrow. It would only require patience.</li>
+          <li><strong>An Identity Crisis:</strong> The younger generation of the Iron City is beginning to quietly question their purpose, wondering if they have a future beyond simply acting as the disposable, bloody tools of global warfare. The First Link built a sanctuary. His descendants wonder if they built a prison.</li>
+          <li><strong>The Bitter Rivalry:</strong> The Covenant holds a fierce, blood-deep rivalry with the Guildhall. Adventurers view themselves as saviors of the world and openly despise the Covenant as soulless mercenaries. The Covenant views the Guildhall as reckless glory-hunters who risk Dungeon Breaks the rest of the world must clean up. Fights between mercenaries and adventurers in neutral cities are common.</li>
+        </ul>
+        <p><strong>Internal Factions:</strong></p>
+        <ul>
+          <li><strong>The Traditionalists:</strong> Hardened veterans who believe the Covenant must remain a pure, unfeeling war machine driven only by gold.</li>
+          <li><strong>The Reformists:</strong> A growing movement seeking to build a genuine national identity and a code of ethics beyond the contract.</li>
+          <li><strong>The Conspirators:</strong> Shadows within shadows, involved in internal power plays, sabotage, and grand political intrigue.</li>
+        </ul>
+        
+        <h3>V. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> The Iron Valley's roads are functional and military-grade—paved with crushed stone and maintained for rapid troop movement, not trade or comfort. Fortified waystations dot the major routes. The roads connect Ferrostad to the borders efficiently, designed to deploy mercenary companies at maximum speed.</p>
+        <p><strong>Transportation:</strong> The Covenant uses heavy Aether-wagons for military logistics—transporting troops, weapons, and supplies to contract sites. For personnel, armored Aether-carriages serve the Links and senior commanders. The Iron Valley's harsh terrain also favors tamed war-beasts: armored dire wolves and massive war-boars bred for aggression. A Covenant mercenary on a war-boar is a common and intimidating sight on the roads of Aethelgard.</p>
+        <p><strong>Energy & Sustenance:</strong> Aether Cores are purchased in bulk from Vorn-Taraz and the Guildhall to power the forges that maintain weapons and armor. Food is almost exclusively imported from the Valdran Empire, making the Covenant deeply dependent on its largest client. The Iron Valley produces nothing but soldiers and contracts.</p>
+      </div>
+    </details>
+
+    <!-- 5. VALDRAN EMPIRE -->
+    <img src="Valdran_Empire.jpeg" alt="Valdran Empire" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        5. VALDRAN EMPIRE
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> Encompassing the legendary Valley of Kings, the most fertile land on the continent. Its vast territory stretches from the freezing Vorn Mountains in the north to the Southern Hills.</p>
+        <p><strong>Area:</strong> 42 million square kilometers. The undisputed largest sovereign nation in all of Aethelgard.</p>
+        <p><strong>Condition:</strong> The heartland is the ultimate breadbasket of the world, continuously nourished by the mighty Aethel River whose reliable annual floods bless the soil with unmatched fertility. The outer regions transition into rolling hills and vast open plains. The empire contains every climate from alpine snow to temperate grassland.</p>
+        <p><strong>Capital:</strong> Aethelburg, a magnificent two-tiered city of towering stone and gleaming spires.</p>
+        
+        <h3>II. History</h3>
+        <p>The empire was forged in Year 250 EK through a historic alliance between humans and demihumans.</p>
+        <p>The nation is ruled exclusively by the direct descendants of the First Hero, the legendary figure who secured victory in the First Great War. Their political authority is deeply rooted in the sanctity of this divine Hero Blood.</p>
+        <p>Once every few centuries, a true human Hero is miraculously born into the royal bloodline. Wielding Weave levels of 6 to 8, these rare saviors always arrive in times of great peril to alter the destiny of the nation.</p>
+        <p>The empire secured its status as the supreme global power through a masterful combination of unmatched agricultural output, shrewd diplomacy, and the undeniable legitimacy of its champions.</p>
+        
+        <h3>III. Government & Power Structure</h3>
+        <p><strong>Form of Governance:</strong> Absolute Hereditary Monarchy, inextricably tied to the Hero Lineage.</p>
+        <p><strong>Apex Leader:</strong> Empress Elenor Asteria Valdris IX, a human monarch carrying the heavy burden of her heroic ancestors.</p>
+        <p><strong>Hierarchical Structure:</strong> The Empress holds absolute power but must constantly navigate the dangerous political waters of the Council of Nobles—a powerful and scheming assembly of one hundred elite aristocratic families.</p>
+        <p><strong>The Shield of the Crown:</strong> The Order of Valdran and the Blood Paladins serve as the military backbone. Composed entirely of elevated commoner knights, they act as a vital political counterweight against the ambitions of the nobility.</p>
+        
+        <h3>IV. Key Characteristics & Global Influence</h3>
+        <ul>
+          <li><strong>The Four Quarters:</strong> The empire's vast territory is divided into four great administrative regions—North, South, East, and West. Each is governed by one of the Four Great Houses, who oversee the domains of roughly 25 lesser noble families. The Great Houses manage tax collection, administration, bureaucracy, and regional security. If a lesser house cannot resolve a problem, the Great House intervenes. This feudal structure maintains order but fuels constant regional rivalry and political maneuvering.</li>
+          <li><strong>The Crisis of Legitimacy:</strong> A quiet panic spreads through the royal courts. The sacred bloodline is thinning, and not a single true Hero has been born in several generations. The very foundation of the imperial throne trembles.</li>
+          <li><strong>The Two-Tiered Capital:</strong> Aethelburg is sharply divided by wealth and status. The shining Upper City elevates nobles and the rich. The crowded Lower City houses common folk. Grand statues known as the Hero Monuments and the solemn Wailing Wall—a massive memorial for the fallen—stand as the realm's most important landmarks.</li>
+          <li><strong>The Pillar of the World:</strong> As the largest grain exporter on the continent, the empire holds an absolute monopoly on the world's food supply. This grants unparalleled political leverage within the Food Council.</li>
+          <li><strong>The Western Axis:</strong> The empire anchors the most powerful global alliance. It relies on the Theocracy of the Sacred Wound as its living shield against the demons, and on the Dwarven master smiths of Vorn-Taraz to forge its heavy weaponry.</li>
+        </ul>
+        
+        <h3>V. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> The Valdran Empire boasts the finest highway network in the world. Wide, smooth, Aether-fused stone roads connect every major city and regional capital. Waystations at regular intervals provide fresh horses, Aether-core recharges, and shelter. Imperial patrols keep the highways safe. The empire's roads are a monument to its power.</p>
+        <p><strong>Transportation:</strong> Aether-wagons and Aether-carriages are the standard for long-distance travel among the nobility, wealthy merchants, and imperial officials. Commoners rely on horse-drawn carts and oxen. The empire's highway system makes travel faster here than anywhere else in Aethelgard. River barges on the Aethel River move the harvest. Air travel remains the exclusive domain of imperial dragons and visiting dignitaries.</p>
+        <p><strong>Energy & Sustenance:</strong> Low-grade Aether Cores power street lamps in every major city. Wealthy estates use climate-controlled Aether systems. Common households cook with portable Aether heat-stones. The empire is the world's granary. Its food is its greatest weapon, and every loaf of bread eaten from the Eastern Seam Zone to the Black Domain was likely grown in Valdran soil.</p>
+      </div>
+    </details>
+
+    <!-- 6. AELDERIM -->
+    <img src="Aelderim.jpeg" alt="Aelderim" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        6. AELDERIM
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> Nestled deep within the central Primeval Forest, residing in the absolute heart of the oldest woodland on the entire continent.</p>
+        <p><strong>Area:</strong> 14 million square kilometers of untouched, ancient wilderness.</p>
+        <p><strong>Condition:</strong> A lush, harmonious, and perfectly preserved environment of ancient magic. Some of the towering trees are as old as the New World itself. The woods continuously sing, vibrating with the melancholic, magical echoes of the ruined Old World. Every leaf, every branch, every root hums with memory.</p>
+        <p><strong>The Heart of the Realm:</strong> The World Tree. A colossal, divine entity that serves as the absolute center of Aelderim civilization. It houses their recorded history within its bark and generates immense magical power through its roots. To harm the World Tree is to declare war on memory itself.</p>
+        <p><strong>Capital:</strong> Silmarya, the radiant city of singing leaves.</p>
+        
+        <h3>II. History</h3>
+        <p>Officially founded in Year 10 EK. Aelderim stands proudly as one of the oldest sovereign nations in existence.</p>
+        <p>The Aelderim are guided by a solemn core philosophy: we shall not forget. They bear the heavy, self-imposed burden of preserving the complete, unedited memories of the Old World—its glory, its apocalyptic destruction, and every single historical event that followed the tragedy of the gods.</p>
+        <p>They have maintained strict, unwavering isolationism throughout the ages, rarely intervening in the chaotic external affairs of other races unless their sacred forest is directly threatened. The world changes. Aelderim remembers.</p>
+        
+        <h3>III. Government & Power Structure</h3>
+        <p><strong>Form of Governance:</strong> A Constitutional Monarchy guided heavily by a supreme Council of Elders.</p>
+        <p><strong>Apex Leaders:</strong> A reigning Monarch acts as the primary figurehead and director of daily governance. However, Elder Luthien—the legendary Keeper of Memory, an Elf over 5,000 years of age—serves as the highest and most revered advisor to the crown.</p>
+        <p><strong>Hierarchical Structure:</strong> The Monarch dictates daily affairs. The Council of Elders, composed exclusively of the oldest and wisest Elves, holds ultimate authority over grand strategic shifts and sacred cultural decisions. No major action is taken without the Council's consensus.</p>
+        
+        <h3>IV. Key Characteristics & Cultural Wonders</h3>
+        <ul>
+          <li><strong>The Living Forest:</strong> The natural woodland is an intricate part of Aelderim civilization. Winding roads, majestic dwellings, and grand buildings are seamlessly grown into and integrated with the living wood. Nothing is built. Everything is cultivated.</li>
+          <li><strong>The Unwalled Library:</strong> A gigantic, open-air archive lacking any physical boundaries. Here, all global memories and historical truths are eternally stored within glowing memory-crystals, ancient writings, and sacred songs. No knowledge is forbidden here—only painful.</li>
+          <li><strong>Absolute Food Security:</strong> The Elves are completely self-sufficient, remaining entirely independent from the political games and leverage of the Food Council. The forest provides everything.</li>
+          <li><strong>The Museum Sickness:</strong> A cultural melancholy born from living perpetually in the past. Many Aelderim struggle to find meaning in the present when they can dwell in perfect, crystalline memories of what was lost. This sickness is the quiet epidemic of their race.</li>
+        </ul>
+        
+        <h3>V. Military Might & Hidden Rifts</h3>
+        <ul>
+          <li><strong>The Forest Keepers:</strong> The dedicated, heavily armed guardians of the sovereign territory. They are the primary enforcers of internal peace and the first line of defense against intrusion.</li>
+          <li><strong>The Shadow Hunters:</strong> A lethal, highly classified special forces unit deployed strictly to eliminate extreme internal threats or exceptionally dangerous intruders who dare to defile the woods. Their existence is officially denied.</li>
+        </ul>
+        <p><strong>Internal Factions:</strong></p>
+        <ul>
+          <li><strong>The Traditionalists:</strong> Demand complete isolation and the eternal burden of perfect memory. The past is sacred. To forget is to betray.</li>
+          <li><strong>The Secret Reformists:</strong> Operate in the shadows, quietly desiring to engage with the outside world. Some whisper that the archives should be burned so their people can finally forget the trauma and live again.</li>
+        </ul>
+        
+        <h3>VI. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> There are no paved roads in Aelderim. Paths are living roots guided by gentle magic, winding between trees without scarring the forest floor. Bridges are woven from living branches. The concept of cutting through the woods for a straight highway is sacrilege.</p>
+        <p><strong>Transportation:</strong> The Elves walk, and they walk with purpose. Their natural grace and centuries of conditioning make a day's journey through dense forest seem effortless. For longer distances, they ride tamed Great Stags—magnificent, antlered mounts that move through the trees in near-total silence. No Aether-wagons exist here. The rumble of wheels and the stench of burning cores would desecrate the sacred stillness of the woods.</p>
+        <p><strong>Energy & Sustenance:</strong> Aelderim rejects Aether Cores entirely. Light comes from bioluminescent flora cultivated throughout Silmarya and the forest paths. Warmth comes from natural hot springs and enchanted wood that radiates gentle heat. Food is gathered from forest gardens grown in harmony with the trees. The Elves take nothing from the earth that the earth does not offer freely.</p>
+      </div>
+    </details>
+
+    <!-- 7. VERDANTUS -->
+    <img src="Verdantus.jpeg" alt="Verdantus" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        7. VERDANTUS
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> The western reaches of the Primeval Forest, resting precariously adjacent to the volatile Western Seam Zone.</p>
+        <p><strong>Area:</strong> 8 million square kilometers of lush, untouched wilderness.</p>
+        <p><strong>Condition:</strong> Sharing the same ancient woodland as the Aelderim, this territory sits dangerously close to unstable magical borders. Despite this, the land is exceptionally fertile and teems with vibrant wildlife. The forest canopy is so dense that entire sections of the city are invisible from above.</p>
+        <p><strong>Capital:</strong> Greenholt, the grand sanctuary city hidden beneath the canopy.</p>
+        
+        <h3>II. History</h3>
+        <p>The nation was officially founded in Year 50 EK by the united tribes of Werebeasts—beings once feared across the continent as wild ferals.</p>
+        <p>Their civilization is guided by a profound and difficult core philosophy: an apex predator that consciously chooses not to kill. After witnessing the unimaginable atrocities of the First Great War, the entire race took a sacred vow of total pacifism. In 1750 EK, this vow was codified into unbreakable law.</p>
+        <p>While their militant cousins formed The Pack and remained in the open grasslands, the founders of Verdantus chose the sanctuary of the forest. They did not flee out of cowardice. They retreated to survive, to reflect, and to become something different.</p>
+        
+        <h3>III. Government & Power Structure</h3>
+        <p><strong>Form of Governance:</strong> A unified Council of Forest Elders. Decisions are made through absolute consensus, deep empathy, and natural harmony.</p>
+        <p><strong>Apex Leader:</strong> Elder Mossback, an immensely wise Turtle Werebeast who has watched over the forest for 1,200 years.</p>
+        <p><strong>Hierarchical Structure:</strong> Respected elders from the various Werebeast clans sit on the Council. There is no single ruler. Leadership is collective, patient, and slow.</p>
+        
+        <h3>IV. Key Characteristics</h3>
+        <ul>
+          <li><strong>The Forest Keepers:</strong> A unique breed of special forces. Initiates undergo fifteen years of rigorous training to master the complex martial art of disabling and detaining enemies without causing physical harm. They are the undisputed global experts in immobilization and submission.</li>
+          <li><strong>The Woundless Protectors:</strong> The highest and most revered title in Verdantus society. Granted only to elite guardians who have never taken a single life—not even in desperate self-defense. To be Woundless is to be a living embodiment of the sacred vow.</li>
+          <li><strong>Absolute Food Security:</strong> Verdantus is entirely self-sufficient through ethical hunting, careful gathering, and small-scale forest farming. They completely ignore the politics of the Food Council.</li>
+          <li><strong>The Natural Economy:</strong> Trade is based on rare forest products—potent medicines, magical wood, exotic fruits—exchanged for essential manufactured goods from the outside world.</li>
+        </ul>
+        <p><strong>Internal Factions:</strong></p>
+        <ul>
+          <li><strong>The Pure Pacifists:</strong> Dedicated believers demanding absolute pacifism at all costs, regardless of existential risk.</li>
+          <li><strong>The Realists:</strong> A growing, pragmatic movement quietly arguing that some degree of violence is necessary to protect their people against Dungeon outbreaks and the encroaching horrors of the Black Domain.</li>
+        </ul>
+        
+        <h3>V. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> There are no paved roads in Verdantus. The forest floor is sacred, and the Werebeasts move through it as animals do—on foot, through the underbrush, along paths only they can sense. Canopy bridges of living wood and vine connect the upper reaches of Greenholt.</p>
+        <p><strong>Transportation:</strong> The Werebeasts are their own transportation. In their beast forms, they run faster than any horse, leap further than any Aether-wagon could travel, and navigate the dense forest with instinctive grace. They do not build vehicles because they do not need them. For the elderly or injured, litter-bearers carry them with reverence.</p>
+        <p><strong>Energy & Sustenance:</strong> Verdantus uses no Aether Cores for daily life. Light is provided by bioluminescent fungi cultivated throughout the city. Heat comes from natural hot springs and fur. Food is hunted, gathered, and grown in small forest gardens. They are the only sovereign nation with zero reliance on external energy sources.</p>
+      </div>
+    </details>
+
+    <!-- 8. GUILDHALL -->
+    <img src="Guildhall.jpeg" alt="Guildhall" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        8. GUILDHALL
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> Directly north of the fertile Valley of Kings, built precariously above the apocalyptic Dungeon known as The Great Maw.</p>
+        <p><strong>Area:</strong> 4 million square kilometers of highly focused and heavily fortified territory.</p>
+        <p><strong>Condition:</strong> A rugged, hilly landscape. The very existence of this nation is entirely defined by the terrifying reality of housing the absolute largest Dungeon in the world, which festers directly beneath the capital. The ground sometimes trembles. The air occasionally carries a faint, acrid tang from below. Every citizen lives knowing that the abyss beneath their feet is alive and hungry.</p>
+        <p><strong>Capital:</strong> Vornhold. A sprawling, bustling city intentionally built completely without walls. This bold architectural choice serves as a powerful symbol of absolute openness and unwavering trust in the martial prowess of its resident adventurers. No wall could hold what comes from below. Only steel and courage can.</p>
+        
+        <h3>II. History</h3>
+        <p>The settlement began as a desperate, chaotic adventurer outpost between 1800 and 2000 EK, established immediately after the terrifying emergence of The Great Maw. Thousands flocked to the site—not to flee, but to fight. The greatest threat in history became the greatest opportunity.</p>
+        <p>The sprawling encampment grew into the massive, wealthy city of Vornhold, which proudly declared itself a fully sovereign state in 2050 EK.</p>
+        <p>Its absolute, defining purpose remains unchanged: to eternally contain and manage the abyssal Dungeon beneath. If left unchecked for even a moment, The Great Maw would flood the entire world with nightmarish monsters within a single generation. Every citizen of Vornhold lives in the shadow of this truth.</p>
+        
+        <h3>III. Government & Core Principles</h3>
+        <p><strong>Form of Governance:</strong> A pure Adventurer Meritocracy.</p>
+        <p><strong>Apex Leaders:</strong> The Council of Masters—a rotating assembly of seven elite individuals possessing legendary S or A rank, democratically elected by their peers every five years. Rank is earned in the depths, not inherited.</p>
+        <p><strong>Core Principles:</strong></p>
+        <ul>
+          <li><strong>Armed Neutrality:</strong> The Guildhall strictly refuses to take sides in the political conflicts of other nations. Their blades face downward, toward the Dungeon, not outward toward other mortals.</li>
+          <li><strong>Anti-Discrimination:</strong> The guild welcomes all races, all origins, and all dark pasts. Judgment is based solely on raw strength, proven skill, and character demonstrated in the depths.</li>
+          <li><strong>No Retirement:</strong> Fading away peacefully is considered a quiet tragedy. Many veteran adventurers remain active into old age or become brutal instructors, believing that a boring death is the only kind worth fearing.</li>
+        </ul>
+        
+        <h3>IV. Key Characteristics & Landmarks</h3>
+        <ul>
+          <li><strong>The Guild Ranking System:</strong> Adventurers progress from the lowly E rank to the legendary S rank. Rank directly dictates exclusive exploration rights, share of recovered loot, and internal political influence. In Vornhold, rank is everything.</li>
+          <li><strong>The Round Spire:</strong> The towering, imposing central headquarters of the Council of Masters. The highest floor looks down upon the entrance to The Great Maw itself.</li>
+          <li><strong>The Guildhall Centre:</strong> A massive building directly adjacent to the Round Spire. All missions and contracts from across the known world are posted here. Adventurers report after completing contracts—or their companions report their deaths. It is the administrative heart of the guild.</li>
+          <li><strong>The Tower of Silence:</strong> A somber, isolated sanctuary dedicated to Dungeon survivors who have returned to the surface suffering from severe mental trauma and unfathomable madness. Few speak of what happens inside. Fewer still walk out whole.</li>
+          <li><strong>The Expedition Economy:</strong> The Guildhall's immense wealth is generated through perilous Dungeon expeditions, the highly lucrative sale of Old World artifacts, and steep Dungeon Taxes charged to foreign explorers seeking to enter the Maw.</li>
+        </ul>
+        
+        <h3>V. Internal Factions & Bitter Rivalries</h3>
+        <ul>
+          <li><strong>The Commercialists:</strong> Pragmatic opportunists who prioritize maximizing profit through the excavation and sale of ancient artifacts. For them, the Dungeon is a resource.</li>
+          <li><strong>The Idealists:</strong> Zealous defenders focused entirely on the sacred mission of saving the world from the Dungeon's relentless outbreaks. For them, the Dungeon is a threat.</li>
+          <li><strong>The Pure Neutrals:</strong> Thrill-seekers and combat purists who care only about ascending the ranks and conquering impossible challenges. For them, the Dungeon is a crucible.</li>
+        </ul>
+        <p><strong>The Bitter Rivalry:</strong> Vornhold holds a fierce, blood-deep rivalry with the Iron Covenant. Adventurers view themselves as saviors of the world and openly despise the Covenant as soulless mercenaries devoid of principles. The Covenant sees the Guildhall as self-righteous hypocrites who profit from danger just as much. Fights between off-duty adventurers and Covenant mercenaries are common in neutral cities.</p>
+        
+        <h3>VI. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> Paved roads connect Vornhold to the major trade routes of Valdran, and well-maintained expedition trails lead from the city to the entrance of The Great Maw and other nearby Dungeons. The Guildhall invests heavily in infrastructure—logistics win expeditions. Waystations supply adventurers heading to and from the depths.</p>
+        <p><strong>Transportation:</strong> As a technological hub allied with Vorn-Taraz, the Guildhall employs Aether-wagons for heavy logistics—hauling expedition supplies, recovered artifacts, and injured adventurers. For rapid deployment, elite adventurers use tamed monsters as personal mounts: dire wolves, griffins, and occasionally juvenile drakes. The Guildhall is the world's largest market for trained monster mounts, and its stables are legendary.</p>
+        <p><strong>Energy & Sustenance:</strong> High-grade Aether Cores flow constantly from Dungeon expeditions, powering Vornhold's forges, artifact vaults, and defensive systems. Food is a mix of Valdran imports, hunted monster meat, and specialized rations designed for deep expeditions. The Guildhall's economy is a cycle: adventurers descend, cores and artifacts rise, and the wealth fuels the next expedition.</p>
+      </div>
+    </details>
+
+    <!-- 9. VORN-TARAZ -->
+    <img src="Vorn-Taraz.jpeg" alt="Vorn-Taraz" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        9. VORN-TARAZ
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> The rugged Southeast slopes of the towering Vorn Mountains, basking in the thin alpine sunlight. The surface realm of the Dwarven race.</p>
+        <p><strong>Area:</strong> 6 million square kilometers of mountain slopes, deep valleys, and highland plateaus. The territory is shared and connected with the deep subterranean realm of Kazad-Vorn below.</p>
+        <p><strong>Condition:</strong> A true marvel of architectural engineering. Sprawling, bustling cities are built directly into the steep mountain slopes, with terraces climbing toward the peaks and tunnels plunging into the rock. The territory is exceptionally rich in precious raw ores and highly potent magical minerals. Forges glow day and night across the mountainside.</p>
+        <p><strong>Capital:</strong> Taraz-Vorn, the gleaming city of endless commerce.</p>
+        
+        <h3>II. History</h3>
+        <p><strong>The Great Schism:</strong> This progressive faction of the Dwarf race consciously chose a radically different path from their deeply conservative kin dwelling far below in Kazad-Vorn.</p>
+        <p>Where the Deep Dwarves dig downward in search of ancestors, the surface Dwarves of Vorn-Taraz turned their eyes outward. They saw a broken world that needed rebuilding—and they had the hammers to do it.</p>
+        <p>Their core philosophy is fiercely open, relentlessly pragmatic, and entirely trade-oriented. Through centuries of unyielding innovation, they have become universally recognized as the absolute greatest engineers and merchants in the entire world. They do not mourn the Old World. They build the New.</p>
+        
+        <h3>III. Government & Power Structure</h3>
+        <p><strong>Form of Governance:</strong> A highly efficient and wealthy Merchant Council.</p>
+        <p><strong>Apex Leader:</strong> The Lord Merchant. This supreme title is currently held by Brynn Copperhand, an incredibly influential figure who remarkably also serves as a Link in the Iron Covenant and a Master within the Guildhall. No single individual in Aethelgard holds more interconnected power.</p>
+        <p><strong>Hierarchical Structure:</strong> Daily governance and grand economic strategies are dictated by a strict council composed entirely of the most successful merchants, master engineers, and wealthy guild heads. Profit is policy. Efficiency is law.</p>
+        
+        <h3>IV. Key Characteristics & Global Influence</h3>
+        <ul>
+          <li><strong>The Silver Guard:</strong> The elite special forces of the mountain. They are not merely heavily armored warriors—they are brilliant combat engineers capable of dominating any battlefield with advanced tactical gear, siege weaponry, and Aether-Cannons.</li>
+          <li><strong>The Heart of the World Economy:</strong> Vorn-Taraz is the undisputed center of the global mercantile network. They aggressively export masterwork metals, weapons, Aether-engines, and advanced technology to every corner of the world—strictly excluding the Black Domain. In return, they import massive quantities of food to sustain their rocky, un-farmable cities.</li>
+          <li><strong>The Counting House:</strong> The largest and most secure bank in the world. Its immense vaults are intricately managed by the Iron Covenant under the watchful eye of Link Vexis. Nations, merchants, and mercenary companies alike store their wealth here. To default on a Counting House debt is to become a global pariah.</li>
+          <li><strong>The Ancestral Rift:</strong> Vorn-Taraz's relationship with Kazad-Vorn remains bitter and tense. The deep-dwelling conservatives consider the surface merchants far too worldly, believing they have abandoned the sacred ways and memories of their ancestors for the mere sake of coin. The surface Dwarves reply that coin feeds more mouths than prayer.</li>
+        </ul>
+        
+        <h3>V. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> Vorn-Taraz possesses the second-finest road network in the world, exceeded only by Valdran. Mountain highways carved from living stone connect every major forge-city and trading post. Massive tunnel-bridges span deep valleys. Funicular systems powered by Aether Cores move goods and people between the vertical terraces. The infrastructure itself is a masterwork of Dwarven engineering.</p>
+        <p><strong>Transportation:</strong> Vorn-Taraz is the birthplace of the Aether-wagon, and its caravans are the most advanced anywhere. Heavy Aether-haulers carry ore from mines to forges. Aether-carriages transport wealthy merchants between cities. For the steepest and most remote mountain paths, sure-footed mountain goats and domesticated Stone Rams pull smaller carts. Vorn-Taraz exports its vehicles to every nation that can afford them.</p>
+        <p><strong>Energy & Sustenance:</strong> The forges of Vorn-Taraz consume enormous quantities of high-grade Aether Cores, purchased from across the continent. The mountains themselves provide geothermal heat, channeled through Dwarven engineering to warm homes and power communal baths. Food is almost entirely imported—primarily Valdran grain—making the empire both Vorn-Taraz's greatest partner and its most critical vulnerability. A single season of blocked trade routes would starve the mountain.</p>
+      </div>
+    </details>
+
+    <!-- 10. KAZAD-VORN -->
+    <img src="Kazad-Vorn.jpeg" alt="Kazad-Vorn" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        10. KAZAD-VORN
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> Buried deep within the absolute lowest roots of the Vorn Mountains, existing in a subterranean realm infinitely more remote than the bustling surface cities of Vorn-Taraz above.</p>
+        <p><strong>Area:</strong> 9 million square kilometers of immense underground expanse.</p>
+        <p><strong>Condition:</strong> The largest and most impenetrable underground fortress in the entire world. The civilization resides within gargantuan cavern networks entirely carved by hand over thousands of years. There is no sunlight here. No wind. No surface weather. The air is cool and dry, scented with stone dust, ancient rock, and the faint metallic tang of deep ores. Bioluminescent lichen cultivated across the cavern ceilings provides a perpetual blue-green twilight.</p>
+        <p><strong>Capital:</strong> Kazad-Dum, also known in ancient tongues as Karak-Dum—the eternal city of stone.</p>
+        
+        <h3>II. History</h3>
+        <p><strong>The Ancient Foundation:</strong> The realm was officially established in Year 103 EK by the most strictly conservative factions of the Dwarven race. While their kin would later climb to the surface and found Vorn-Taraz, the Deep Dwarves never left the stone that birthed them.</p>
+        <p><strong>The Core Philosophy:</strong> Their entire existence is driven by a singular, deeply melancholic purpose—digging down to find their ancestors. The society is permanently enveloped in profound, collective grief over the apocalyptic loss of the Old World. They dig relentlessly into the abyss, searching the absolute depths of the earth for any lingering traces of their lost gods and fallen forefathers. Every tunnel is a prayer. Every excavated chamber is a question asked of the silence.</p>
+        <p>The Great Schism is not ancient history here—it is a living wound. The Deep Dwarves remember when their surface cousins turned away from the ancestors and toward the market. They have not forgiven.</p>
+        
+        <h3>III. Government & Power Structure</h3>
+        <p><strong>Form of Governance:</strong> A rigid, highly traditional Council of Elders.</p>
+        <p><strong>Apex Leader:</strong> Elder Thrain Stoneheart, a leader whose absolute resolve and traditionalism are as unyielding as the mountains surrounding him. He has never seen the surface, and he considers this a mark of spiritual purity.</p>
+        <p><strong>Hierarchical Structure:</strong> A deeply closed-off and strictly organized society. Absolute authority flows entirely downward from the revered clan elders and the sacred Ancestral Priests, who interpret the will of the lost forefathers. Wealth means nothing here. Only lineage, stone-sense, and the depth of one's digging matter.</p>
+        
+        <h3>IV. Key Characteristics & Military Might</h3>
+        <ul>
+          <li><strong>The Depth Guards:</strong> The ultimate elite defenders of the realm. These heavily armored troops are permanently stationed at the lowest and most dangerous abyssal entrances, protecting the civilian caverns from the unknown horrors that stir in the deep dark. They have not seen sunlight in generations.</li>
+          <li><strong>The Ancestor Seekers:</strong> Highly specialized and utterly fearless exploration teams. They venture into the darkest, unmapped depths searching for Old World artifacts, hidden ancestral tombs, and any sign of the gods who died before the New World was stitched together. Few return. Those who do bring relics that become the holiest treasures of Kazad-Dum.</li>
+          <li><strong>The Ultimate Bastion:</strong> The underground fortress is virtually impossible to siege. Any invading surface army would starve to death outside the heavy stone gates—mere slits in the mountainside—long before breaching the outer defenses. The mountain itself is the greatest shield in Aethelgard.</li>
+          <li><strong>Extreme Isolationism:</strong> Kazad-Vorn very rarely interacts with the outside world. They aggressively refuse to participate in international treaties, global alliances, or the politics of the Food Council. They do not export. They do not import. They are a world unto themselves.</li>
+          <li><strong>The Cultural Rift:</strong> They harbor a deep, quiet disdain for their merchant cousins in Vorn-Taraz. The elders of Kazad-Dum believe the surface dwellers have abandoned their true Dwarven dignity and sacred roots for the sake of mere gold. A Vorn-Taraz merchant visiting Kazad-Dum would be met with cold silence and turned away at the gates.</li>
+        </ul>
+        
+        <h3>V. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> There are no roads in Kazad-Vorn—only tunnels, carved staircases, and vast spiral ramps descending into the deep. Massive stone bridges span underground chasms. The main arteries are the rail-tracks: iron rails laid along the floors of major tunnels, upon which heavy mine-carts rumble day and night, carrying ore from the deep excavations to the forges of the city.</p>
+        <p><strong>Transportation:</strong> The Kazad-Vorn rail-carts are the realm's beating heart. Pushed by Dwarven muscle along the shallower routes and pulled by Aether-core engines in the deeper, steeper shafts, these carts transport stone, ore, relics, and personnel between the city and the depths. They are heavy, loud, utilitarian machines—starkly functional, without any of the polish or luxury of Vorn-Taraz Aether-wagons. For personal travel, the Deep Dwarves walk. The strongest among them can march for days without rest through pitch-black tunnels, guided by stone-sense alone.</p>
+        <p><strong>Energy & Sustenance:</strong> Geothermal heat from the mountain's roots is channeled through Dwarven engineering, warming homes and powering communal forges. Light comes from bioluminescent fungi cultivated in massive underground gardens. Food is grown in these same gardens—subterranean crops of mushroom, moss, and blind fish, supplemented by giant cavern-beetles raised for meat. Kazad-Vorn is entirely self-sufficient, requiring no external food imports. They take nothing from the surface world, and they give nothing back.</p>
+      </div>
+    </details>
+
+    <!-- 11. SANCTUM AETERNUM -->
+    <img src="Sanctum_Aeternum.jpeg" alt="Sanctum Aeternum" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        11. SANCTUM AETERNUM
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> A special autonomous district nestled directly within Aethelburg, the grand capital of the Valdran Empire.</p>
+        <p><strong>Area:</strong> A highly concentrated 40 square kilometers. It operates strictly as a sovereign district rather than a sprawling contiguous state.</p>
+        <p><strong>Condition:</strong> Functioning entirely as a state within a city. This enclosed holy district is densely packed with towering churches, silent monasteries, prestigious theological schools, and the breathtakingly magnificent Basilica of Saint Elias. The streets are clean, polished, and perpetually filled with the scent of incense and the sound of bells.</p>
+        <p><strong>Capital:</strong> Aethelburg. The Sanctum shares the urban landscape with the secular empire, its spires rising among the imperial towers—a constant visual reminder of the alliance between throne and altar.</p>
+        
+        <h3>II. History</h3>
+        <p>The faction was born from the monumental Great Schism in 2000 EK. A visionary cardinal named Elias Corvinus fundamentally rejected the bleak, unforgiving doctrine of the Theocracy that claimed there is no heaven. He boldly issued the Declaration of New Truth and was swiftly excommunicated for his defiance.</p>
+        <p>In 2010 EK, Emperor Caelus III officially granted the exiled cardinal a small twelve-square-kilometer district to establish his own church. This tiny refuge rapidly blossomed into the immense power of Sanctum Aeternum.</p>
+        <p>Their entire faith is built upon what critics cynically call "the comfortable lie." They adamantly preach that a beautiful heaven and benevolent gods truly exist, firmly believing that this profound faith is absolutely necessary to provide a broken world with comfort and hope. If the truth is too cruel, they will build a kinder lie.</p>
+        
+        <h3>III. Government & Power Structure</h3>
+        <p><strong>Form of Governance:</strong> A Hereditary Elective Theocracy.</p>
+        <p><strong>Apex Leader:</strong> Pope Innocentius VII, a frail but immensely influential seventy-eight-year-old human. His voice is soft. His authority is absolute.</p>
+        <p><strong>Hierarchical Structure:</strong> The church operates under a strictly rigid ecclesiastical hierarchy. The Pope is carefully elected by the grand Conclave of Cardinals, chosen exclusively from a lineage of priests officially considered the direct spiritual descendants of Saint Elias Corvinus.</p>
+        
+        <h3>IV. Key Characteristics & Shadows of Faith</h3>
+        <ul>
+          <li><strong>The Global Congregation:</strong> Sanctum Aeternum stands as the absolute largest religious body in the world. Over 40 million devoted followers—nearly half the global population—look to the Sanctum for hope. Their staggering numbers far surpass the grim congregations of the Theocracy.</li>
+          <li><strong>The Forbidden Library:</strong> Hidden deep beneath the basilicas, this highly classified vault stores ancient knowledge and historical records deemed too dangerous or contradictory to the Sanctum's divine doctrine. Pope Innocentius himself secretly visits the shelves, reading texts that would shatter the faith of his followers.</li>
+          <li><strong>The Holy Inquisition:</strong> A terrifying shadow network of two thousand elite agents officially tasked with brutally rooting out heresy and protecting the faith, operating constantly both inside the holy district and across the broader continent. Heretics vanish. Books burn. The Inquisition's shadow is long.</li>
+          <li><strong>The Succession Crisis:</strong> A bitter political struggle quietly tears the holy leadership apart. Cardinal Lorenzo leads a militant hardline faction desperate to expand global political influence. Cardinal Alexandra champions a progressive reformist movement seeking to focus purely on charity and public education. The Pope watches both, and trusts neither.</li>
+          <li><strong>The Imperial Symbiosis:</strong> The church is entirely reliant on the Valdran Empire for military protection, steady food supplies, and immense funding. In exchange, the Sanctum provides crucial religious legitimacy to the Emperor—the gods favor the throne, and the throne protects the gods' messengers. It is a perfect, unbreakable worldly symbiosis.</li>
+        </ul>
+        
+        <h3>V. The Bitter Rivalry</h3>
+        <p>The Theocracy of the Sacred Wound fiercely accepts the bitter, godless reality of the world and bleeds every single day on the apocalyptic front lines against the encroaching darkness.</p>
+        <p>Sanctum Aeternum offers beautiful comfort, divine salvation, and eternal hope—all while thriving safely within the opulent heart of absolute imperial power.</p>
+        <p>These two massive religious bodies remain uncompromising ideological rivals. Each side considers the other a dangerous, heretical cult that must eventually be dismantled. The Theocracy sees the Sanctum as merchants of beautiful lies. The Sanctum sees the Theocracy as prophets of unnecessary despair. The schism is eternal, and both sides wait for the other to fall.</p>
+        
+        <h3>VI. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> As a district within Aethelburg, the Sanctum benefits from the Valdran Empire's magnificent infrastructure. Paved roads, Aether-lit streets, and imperial aqueducts serve the holy district as seamlessly as they serve the imperial palace. Pilgrims arrive via the grand highways of Valdran and are funneled into the district through the Pilgrim's Gate, where the Basilica of Saint Elias dominates the skyline. The Sanctum itself maintains only its internal streets—flawlessly clean, lined with statuary, designed for processions and prayer rather than commerce or war.</p>
+        <p><strong>Transportation:</strong> The clergy and cardinals travel in ornate Aether-carriages, gifts from the Valdran nobility and symbols of the church's wealth. For the faithful masses, pilgrimage is undertaken on foot—a spiritual journey as much as a physical one. Within the district, all travel is pedestrian. The Sanctum's small geographic size makes vehicles unnecessary for daily life. Rickshaws and palanquins carry the elderly and infirm. The Pope himself moves through the district in a ceremonial Aether-litter, carried by the Papal Guard.</p>
+        <p><strong>Energy & Sustenance:</strong> Aether Cores power the great chandeliers of the Basilica, the eternal flame at the Altar of Saint Elias, and the hidden vaults of the Forbidden Library. The Sanctum consumes Aether with ceremonial excess—light, warmth, and spectacle are tools of faith. Food is provided entirely by the Valdran Empire as part of the imperial symbiosis. The Sanctum's grain stores are among the largest in Aethelburg, a gift from the throne that ensures the clergy never hunger while they pray for the empire's salvation.</p>
+      </div>
+    </details>
+
+    <!-- 12. SOL-VENTARI -->
+    <img src="Sol-Ventari.jpeg" alt="Sol-Ventari" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        12. SOL-VENTARI
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape and Geography</h3>
+        <p><strong>Location:</strong> Situated on the eastern fringes of the Primeval Forest. Rather than constructing a brand new domain from scratch, they boldly claimed and settled within the existing peripheral woodlands of the ancient Aelderim territory.</p>
+        <p><strong>Area:</strong> An unspecified but notably smaller expanse compared to the vast Aelderim heartland.</p>
+        <p><strong>Condition:</strong> The pristine forest remains breathtakingly beautiful, yet it is managed with a radically different philosophy. Unlike their deeply conservative kin who refuse to harm a single branch, these elves harvest limited amounts of timber to fuel practical innovation and daily life.</p>
+        <p><strong>Capital:</strong> They possess no centralized capital city whatsoever. Instead, their society thrives within fluid, scattered communities completely lacking a single, rigid seat of government.</p>
+        
+        <h3>II. History</h3>
+        <p>The Sol Ventari are a radical faction of elves who deliberately broke away from the stagnant, memory obsessed traditions of Aelderim.</p>
+        <p>They live by a shocking and highly controversial doctrine: we burn the archives to forget. Firmly believing that holding onto eternal grief is a deadly toxin that prevents true societal healing, they intentionally destroyed countless painful historical records detailing the Old World and the First Great War.</p>
+        <p><strong>The Guiding Motto:</strong> To completely forget ancient trauma and fully embrace the light of innovation.</p>
+        <p>Their current relationship with Aelderim is defined entirely by a heavy, toxic silence. It is a quiet cold war filled with intense unspoken tension, bitter resentment, and mutual blame.</p>
+        
+        <h3>III. Government and Power Structure</h3>
+        <p><strong>Form of Governance:</strong> A progressive assembly known as the Silver Council. This title reflects their youthful, shining perspective on the future of their race.</p>
+        <p><strong>The Apex Leader:</strong> The Eldest, a wise yet remarkably open minded individual democratically elected by the council members.</p>
+        <p><strong>Hierarchical Structure:</strong> They operate under a highly fluid and flexible collective governance, completely discarding the strict, ancient hierarchies and suffocating traditions of the main elven kingdom.</p>
+        
+        <h3>IV. Key Characteristics and Global Relations</h3>
+        <ul>
+          <li><strong>The Bridge Keepers:</strong> A highly specialized and vital role within their society. These charismatic individuals serve as dedicated merchants, skilled diplomats, and active liaisons to the outside world. They frequently negotiate with the dwarven engineers of Vorn Taraz and the bold adventurers of the Guildhall, proudly acting as the welcoming face of the Sol Ventari.</li>
+        </ul>
+        <p><strong>Internal Factions:</strong></p>
+        <ul>
+          <li><strong>The Reconciliation Faction:</strong> A hopeful group quietly desiring to eventually mend the broken bonds and make lasting peace with their estranged kin in Aelderim.</li>
+          <li><strong>The Independent Faction:</strong> Fierce radicals who demand complete and permanent separation, wishing to forge an entirely new cultural identity completely free from the long shadows of the past.</li>
+        </ul>
+      </div>
+    </details>
+
+    <!-- 13. THE PACK -->
+    <img src="The_Pack.jpeg" alt="The Pack" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        13. THE PACK
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> Relentlessly wandering the vast Eastern Grasslands. They exist as a moving society directly adjacent to the highly dangerous Eastern Seam Zone. Their northern ranges brush the southern foothills of the Vorn Mountains.</p>
+        <p><strong>Area:</strong> A massive but tragically shrinking territory. Traditional hunting grounds are constantly threatened by the expansion of high-tier Dungeons and the encroaching borders of civilized nations.</p>
+        <p><strong>Condition:</strong> An endless, windswept savanna of waist-high golden grass, broken by scattered groves of iron-barked Akasia trees and shallow, Aether-tinged lakes. These oases are magnets for life and death alike. The terrain is completely open and harsh, demanding absolute physical perfection from its inhabitants. Monster activity here is exceptionally high due to proximity to the Seam Zone. The Grasslands are the undisputed domain of Behemoths—nowhere else in Aethelgard do they roam in such staggering numbers and scale. Among them are the Walking Mountains, Behemoths so colossal that forests grow upon their backs, clouds scrape their shoulders, and their footsteps carve new valleys.</p>
+        <p><strong>Capital:</strong> None. They are a strictly nomadic faction, constantly moving their massive tent encampments to follow the great beast herds, evade sudden Dungeon outbreaks, and navigate by the shadows of the Walking Mountains.</p>
+        
+        <h3>II. History</h3>
+        <p>This militant faction was forged in the bloody aftermath of the First Great War. While their pacifist cousins fled to the safety of the Primeval Forest to establish Verdantus, The Pack firmly chose to remain in the dangerous open world.</p>
+        <p>They operate on a brutal doctrine: they absolutely refuse to forget the past slaughters and historical injustices inflicted upon their kind. They view the total pacifism of Verdantus not as a noble choice, but as a cowardly betrayal of their ancestors.</p>
+        <p>Their entire culture revolves around the harsh reality of the eternal hunt. They fundamentally believe that weakness is a fatal sin in a world built upon a corpse.</p>
+        
+        <h3>III. Government & Power Structure</h3>
+        <p><strong>Form of Governance:</strong> A Nomadic Tribal Meritocracy guided strictly by the law of the strong.</p>
+        <p><strong>Apex Leader:</strong> Alpha Kaelen, a massive, battle-hardened Wolf Werebeast. He secured and maintains his absolute authority through sheer combat prowess, unmatched survival instincts, and tactical brilliance. He is the anchor that holds the factions together.</p>
+        <p><strong>Hierarchical Structure:</strong> The society is efficiently divided into highly specialized, fast-moving hunting bands. While the Alpha holds unquestionable command during times of war and the great hunts, he regularly consults a circle of elder shamans for spiritual and navigational guidance, especially regarding the movements of the Walking Mountains.</p>
+        
+        <h3>IV. Key Characteristics & Tribal Rifts</h3>
+        <ul>
+          <li><strong>Ghosts of the Grasslands:</strong> Universally recognized as the absolute greatest stealth hunters in all of Aethelgard. Despite their towering physical size, they have perfected the art of moving through waist-high grass and scrub forests in complete silence. They emerge like phantoms, kill, and vanish before the body hits the ground.</li>
+          <li><strong>The Hunter-Gatherer Economy:</strong> Absolutely zero agriculture and zero permanent industry. They survive entirely by hunting the colossal beasts of the plains. Their economy is sustained by trading rare monster skins, crafted bone weaponry, and premium meat with only the bravest merchant caravans.</li>
+          <li><strong>The Wildcard Dynamic:</strong> Encounters with The Pack are unpredictable. The faction is deeply divided, and which hunting party finds an outsider is purely a matter of luck. One patrol may guide you to safety. Another will leave your bones in the grass.</li>
+        </ul>
+        <p><strong>Internal Factions:</strong></p>
+        <ul>
+          <li><strong>The Radicals — The Unforgiving Flame:</strong> Fierce, bloodthirsty militants demanding total war against the human empires and forced reunification with Verdantus. They see all outsiders as invaders. No negotiation. Only the hunt.</li>
+          <li><strong>The Pragmatists — The Open Claw:</strong> Pragmatic survivors guided by Alpha Kaelen. They understand that blind war means extinction. They maintain a fragile, unofficial intelligence network with veteran Guildhall explorers, trading Behemoth migration routes and ancient knowledge for advanced monster cores and Old World artifacts. They view adventurers as potential allies against overwhelming Behemoth threats. But trust is a rare and expensive currency on the Grasslands.</li>
+        </ul>
+        
+        <h3>V. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> No paved roads exist in the Grasslands. The only paths are dirt tracks carved by caravan wheels, animal trails, and the footprints of those who came before. Wayfinding relies on the stars, the Valer River tributaries, and the movements of the Walking Mountains. The Pack builds no permanent structures—only massive tent encampments that can be dismantled in an hour.</p>
+        <p><strong>Transportation:</strong> The Werebeasts are their own transport. In beast form, they outrun horses and cover vast distances without fatigue. For carrying heavy loads—monster carcasses, trade goods, the young and injured—they use tamed Behemoth-calves and large herbivores captured from the plains. No Aether-wagons exist among them. They do not forge vehicles. They are the vehicle.</p>
+        <p><strong>Energy & Sustenance:</strong> Fire comes from dried dung and scavenged wood. Light comes from the cooking fire and the stars. Aether is used sparingly—only elder shamans carry small cores for ritual purposes. Food is exclusively what the hunt provides. Every meal is earned by tooth and claw.</p>
+      </div>
+    </details>
+
+    <!-- 14. DRAGON NEST (NXYARIA) -->
+    <img src="Dragon_Nest.jpeg" alt="Dragon Nest" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        14. DRAGON NEST (NXYARIA)
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape and Geography</h3>
+        <p><strong>Location:</strong> Nxyaria, universally feared and revered as the Nameless Peak, serves as the ultimate ancestral dragon sanctuary. It is situated in the absolute northernmost reaches of the Vorn Mountains, resting far beyond the deep underground gates of Kazad Vorn.</p>
+        <p><strong>The Hidden Valley:</strong> This legendary realm is a secluded, massive basin perfectly protected by the absolute highest peaks on the continent. It remains completely hidden from the mortal world by eternal storm clouds and lethal altitudes. It is entirely inaccessible by foot, reachable only by true flight or through ancient, heavily guarded secret paths.</p>
+        <p><strong>Geothermal Warmth:</strong> Despite the freezing arctic cold surrounding the outer mountains, the hidden valley is naturally warmed by intense underground volcanic activity. This creates a perfectly comfortable, thriving climate specifically suited for the ancient reptiles.</p>
+        <p><strong>The Eternal Egg:</strong> Resting at the absolute heart of the grand nest is a colossal, glowing rock formation. It is not a true biological egg, but rather a massive reservoir of pure magical energy that serves as the primary power source sustaining the entire sanctuary.</p>
+        <p><strong>The Cliff Lairs:</strong> The towering valley walls are riddled with gargantuan natural caves. Each cavern serves as a sovereign, private domain filled with hoarded treasures for individual dragons and their kin.</p>
+        
+        <h3>II. The Draconic Hierarchy</h3>
+        <p>The society of Nxyaria operates on an absolute, age based hierarchy where power and wisdom grow eternally with time.</p>
+        <table>
+          <tr><th>Rank</th><th>Age</th><th>Role</th></tr>
+          <tr><td>The Dragon Lord</td><td>Over 10,000 Years Old</td><td>Supreme sovereign of the skies. Unquestionable law.</td></tr>
+          <tr><td>The Elder Dragons</td><td>5,000 to 10,000 Years Old</td><td>High advisors to the Lord. Lead individual dragon clans.</td></tr>
+          <tr><td>The Adult Dragons</td><td>1,000 to 5,000 Years Old</td><td>Fully mature sentient beings. Primary defenders and enforcers.</td></tr>
+          <tr><td>The Young Dragons</td><td>Up to 1,000 Years Old</td><td>Growing drakes training, hunting, and exploring the basin.</td></tr>
+          <tr><td>Lesser Dragons and Wyverns</td><td>Variable</td><td>Highly intelligent beasts lacking true draconic sentience. Outer perimeter guards.</td></tr>
+        </table>
+      </div>
+    </details>
+
+    <!-- 15. NOCTISIA -->
+    <img src="Noctisia.jpeg" alt="Noctisia" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+    <details class="nation-details">
+      <summary>
+        15. NOCTISIA
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>I. Landscape & Geography</h3>
+        <p><strong>Location:</strong> A large island off the southern coast of Aethelgard, completely hidden from the mainland by the magical Guardian Mist. It lies across the Southern Sea, far from the shipping lanes and the eyes of the world.</p>
+        <p><strong>Area:</strong> 2.5 million square kilometers. A modest territory, but entirely self-contained and self-sufficient.</p>
+        <p><strong>Condition:</strong> A land of perpetual twilight. The island is dominated by rugged volcanic hills, ancient black forests, and mist-shrouded valleys. The soil is fertile, nourished by ash from dormant volcanoes. Fresh water is abundant. The climate is cool and damp, with fog rolling in from the sea almost every evening.</p>
+        <p><strong>Anomalies:</strong> The Guardian Mist is not a natural phenomenon. It is a sentient, magical barrier woven over two hundred years by the late Patriarch Cassia. The mist disorients, repels, or simply "forgets" unwanted visitors. No foreign fleet has ever breached it without invitation. The mist is Noctisia's wall, its gatekeeper, and its first and last line of defense.</p>
+        <p><strong>Capital:</strong> Umbra Keep — a fortress-city carved into the caldera of an extinct volcano. Its towers rise from the mist like black spears, and its roots descend into geothermal hot springs that warm the entire city. The Keep is silent, orderly, and lit by pale blue Aether-crystals.</p>
+        
+        <h3>II. History</h3>
+        <p><strong>The Genesis of Sundering:</strong> Noctisia was founded in 500 EK, during an event known as The Sundering. A faction of ancient vampires, led by the original five Patriarchs, violently rebelled against The First King of the Black Domain. They refused to be weapons in his war of extinction. They chose restraint over rage, and fled south across the sea.</p>
+        <p><strong>The Great Famine:</strong> For the first five hundred years, the fledgling colony nearly starved. The island's wildlife could not sustain them, and their thirst for blood drove them to the brink of civil war. The vampire scholar Morpheus saved them by engineering the Blood Gardens — a symbiotic, consensual relationship with willing humans who live as honoured guests, not cattle.</p>
+        <p><strong>The Long Vigil:</strong> Since then, Noctisia has remained utterly isolationist. It has never joined a global war. It has never signed the Food Council treaty. Its people watch the mainland's chaos from behind the mist, intervening only in the rarest of circumstances — and even then, no one knows it was them.</p>
+        
+        <h3>III. Government & Power Structure</h3>
+        <p><strong>Form of Governance:</strong> A Council of Patriarchs — six seats, currently five living occupants. Decisions require a unanimous vote among the present Patriarchs. There is no single ruler; even the empty seat of Cassia is left deliberately unfilled as a mark of respect.</p>
+        <p><strong>The Apex Leaders — The Five Living Patriarchs:</strong></p>
+        <ul>
+          <li><strong>Vladimir the Sunderer</strong> (Circle 8, ~5,500 years): Warrior-philosopher, head of military.</li>
+          <li><strong>Sophia the Stranger</strong> (Circle 7, ~3,200 years): Diplomat, spymaster, voice of Noctisia abroad.</li>
+          <li><strong>Morpheus the Dreamer</strong> (Circle 6, ~5,000 years): Geneticist, creator of the Blood Gardens.</li>
+          <li><strong>Razvan the Archivist</strong> (Circle 7, ~5,000 years): Keeper of all Old World records.</li>
+          <li><strong>Lilith the Sorrowful</strong> (Circle 6, diminished, ~4,500 years): Mourner, ritual guardian.</li>
+        </ul>
+        <p>The empty sixth seat once belonged to <strong>Cassia the Veil</strong> (deceased, mist-weaver).</p>
+        <p><strong>Hierarchical Structure:</strong> Below the Patriarchs stand the Shadow Forces — an army of 20,000 elite vampires, each between 500 and 1,000 years old. Below them, the common vampire population lives in strict but fair order. No slavery. No hunger. No war.</p>
+        <p><strong>Hidden Factions:</strong> A quiet minority of young vampires whispers of "returning to the old ways" — of joining the Black Domain's crusade. The Patriarchs are aware but tolerate the talk, believing that suppressed dissent festers into rebellion.</p>
+        
+        <h3>IV. Key Characteristics</h3>
+        <ul>
+          <li><strong>The Calm Blood Philosophy:</strong> Every vampire child is taught the same creed: "Thirst is not destiny." They do not deny their nature; they master it. Drinking blood is a ritual, not a hunt. The Blood Gardens provide willingly, and in return, the vampires offer protection, art, and purpose.</li>
+          <li><strong>The Guardian Mist:</strong> Cassia's final gift. The mist is semi-sentient. It remembers faces and intentions. An enemy ship will sail in circles for days and emerge back where it started. An invited guest will find a clear path. No one has ever broken through by force.</li>
+          <li><strong>The Shadow Forces:</strong> Noctisia's army is tiny by continental standards but terrifyingly experienced. Every soldier is a half-millennium-old veteran. They do not conquer; they defend. In the rare battles they have fought, they have never lost.</li>
+          <li><strong>Genetic Engineering:</strong> Morpheus has perfected the art of blood-line modification. Noctisian vampires suffer none of the traditional weaknesses: they can walk in weak daylight, enter any building uninvited, and resist holy symbols through sheer will. They cannot, however, survive complete bodily destruction or spiritual exhaustion.</li>
+          <li><strong>Economy:</strong> Noctisia is completely self-sufficient in food, water, and basic materials. They import only luxury technology from Vorn-Taraz — Aether-cores, precision tools, and rare metals — paid for with ancient knowledge and subtle espionage.</li>
+          <li><strong>Demographics:</strong> Almost exclusively vampire, with a small but honoured community of Blood Garden humans who live as equal citizens. No other race resides permanently on the island.</li>
+        </ul>
+        
+        <h3>V. Daily Life & Technology</h3>
+        <p><strong>Infrastructure:</strong> Noctisia has no need for the sprawling road networks of the mainland nations. The island is compact, and its population is concentrated around Umbra Keep and a handful of smaller settlements. Paths are paved with volcanic stone, winding through the black forests and mist-filled valleys. The Guardian Mist itself is the only border that matters. No wall, no gate, no checkpoint. The mist decides who enters and who vanishes.</p>
+        <p><strong>Transportation:</strong> The vampires of Noctisia move on foot, and they move with a speed and silence that makes vehicles redundant. Their natural abilities—enhanced speed, tireless endurance, and the grace of centuries—allow them to traverse the entire island without need of mount or machine. For the Blood Garden humans and honoured guests, simple horse-drawn carriages suffice. No Aether-wagons exist here. The island is small enough, and its people patient enough, that haste is rarely a virtue.</p>
+        <p><strong>Energy & Sustenance:</strong> Geothermal heat from the dormant volcano warms Umbra Keep and powers the island's minimal industry. Light comes from pale blue Aether-crystals cultivated in the caverns beneath the caldera. Food for the human population is grown in volcanic soil—remarkably fertile, yielding crops that sustain the small mortal community. The vampires require only what the Blood Gardens provide willingly. Noctisia takes nothing from the outside world that it cannot trade for in quiet, careful exchanges.</p>
+      </div>
+    </details>
+
+  </div>
+      </div>
+      
+<!-- VI. Dungeons -->
+<div id="section-dungeons" class="wiki-section">
+  <div class="section-title-bar">Aethelgard Wiki — VI. Dungeons</div>
+  <div class="section-inner">
+    <h1>VI. DUNGEONS — THE WOUNDS OF AETHELGARD</h1>
+
+    <h2>The Nature of Dungeons</h2>
+    <p>Dungeons are the <strong>physical mouths of reality scars</strong>—open, festering wounds where the dead Old World bleeds into the stitched New. <strong>Depth Equals Age:</strong> descending is traveling backward through the history of the Old World. The Laws of the Five Goddesses weaken or reverse inside.</p>
+
+    <h2>Dungeon Ecology: The Abyssal Mercy</h2>
+    <p>Every layer possesses a unique, self-sustaining food source. The Dungeon does not want explorers to die of starvation—it provides a twisted "chance" to survive. Scholars debate whether this is to make mortals <strong>witness</strong> the Old World's tragedy, or to prolong their psychological suffering.</p>
+
+    <h2>Classification & Dungeon Breaks</h2>
+    <table>
+      <tr><th>Rank</th><th>Depth</th><th>Description</th></tr>
+      <tr><td>D</td><td>0–1 km</td><td>Imperfect, chaotic creatures</td></tr>
+      <tr><td>C</td><td>0–1 km</td><td>Structured threats</td></tr>
+      <tr><td>B</td><td>1–10 km</td><td>Structured monsters, environmental hazards</td></tr>
+      <tr><td>A</td><td>1–10 km</td><td>Highly dangerous, reality anomalies</td></tr>
+      <tr><td>S</td><td>10–100 km</td><td>Sentient mini-civilizations. Only 7 recorded. Apocalyptic global events</td></tr>
+      <tr><td>Apocalyptic</td><td>100 km+</td><td>The Great Maw alone. 300 km+ confirmed</td></tr>
+    </table>
+    <p><strong>Dungeon Break:</strong> If a Dungeon is ignored, its population overflows to the surface, wiping out surrounding civilization.</p>
+
+    <h2>The 2470 EK Expedition</h2>
+    <p>Led by Primus Thalanil Silverleaf, Darian Vex, and Aurelia Emberdrake. <strong>130 entered, 60 returned</strong> from 350 km. At 300 km, they found a black light door inscribed: <em>"Here ends the journey of those who still love life. Here begins the journey of those who no longer fear death."</em></p>
+    <p><strong>Survivors:</strong> 20 insane, 10 deeply depressed, 30 traumatized. All information below 300 km is permanently classified.</p>
+
+    <h2>THE GREAT MAW — THE DEEPEST ABYSS</h2>
+    <img src="Great_Maw.jpeg" alt="The Great Maw" style="width:100%; border-radius:8px; margin:1.5rem 0 0.3rem 0;">
+
+    <!-- Layer 0–5 km -->
+    <details class="nation-details">
+      <summary>
+        Layers 0–5 km: The Upper Reaches
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>Layer 0–500 m (The Dragon's Mouth)</h3>
+        <p>Ordinary caves, stone walls, stalactites, small rivers. 15–25°C stable. <strong>Class D:</strong> giant rats, small bats, slimes. No phenomena.</p>
+        <h3>Layer 500–1,000 m</h3>
+        <p>Glowing moss on walls, caves widen, small lakes appear. 10–30°C fluctuating. <strong>Class D–C:</strong> goblins, giant insects, snakes. Glowing moss attracts monsters.</p>
+        <h3>Layer 1–2 km (The Phosphorescent Forest)</h3>
+        <p>Underground forest at 1,200m, phosphorescent trees. 20°C stable, high humidity. <strong>Class C:</strong> large lizards, predatory plants. Tree light heals minor wounds but prolonged exposure causes hallucinations.</p>
+        <h3>Layer 2–3 km (The Black Sand Desert)</h3>
+        <p>500m-wide passages of black sand. 40°C "day," 10°C "night" (12-hour cycle, no sun). <strong>Class C:</strong> giant scorpions, sand worms. "Thirsty" sand absorbs moisture; standing too long causes rapid fatal dehydration.</p>
+        <h3>Layer 3–4 km (The Hungry Lake)</h3>
+        <p>Vast, still underground lake. 15°C. <strong>Class C–B:</strong> large predatory fish, giant electric eels. "Hungry" water pulls anything touching the surface under; special boats required.</p>
+        <h3>Layer 4–5 km (The Living Cliff)</h3>
+        <p>1 km vertical cliff, slippery walls, no handholds. Lava river below. Air 5°C, lava 1,000°C+. <strong>Class B:</strong> leather-winged flying creatures. The cliff is "alive," actively shifting slope to throw climbers into the lava.</p>
+      </div>
+    </details>
+
+    <!-- Layers 5–10 km -->
+    <details class="nation-details">
+      <summary>
+        Layers 5–10 km: Early Chaos
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>5–6 km: Ruined Ancient City</h3>
+        <p>20°C, gravity 0.5x. <strong>Class B.</strong> Stone soldier shadows reenact battles from a dead civilization.</p>
+        <h3>6–7 km: Frozen Forest</h3>
+        <p>−20°C. Breath freezes into lethal projectiles. <strong>Class A–B.</strong> Ice wolves and yetis hunt in silence.</p>
+        <h3>7–8 km: Burning Plains</h3>
+        <p>50°C air, 300°C magical fire (no smoke). <strong>Class A–B.</strong> Fire lizards consume heat to grow.</p>
+        <h3>8–9 km: Walkable Cloud Sea</h3>
+        <p>10°C, time slows 2x (movement feels underwater). <strong>Class A.</strong> Flying serpents dive through clouds.</p>
+        <h3>9–10 km: Giant Crystal Passages</h3>
+        <p>0°C. Crystals reflect independent moving shadows. <strong>Class A.</strong> Crystal golems attack anything touching formations.</p>
+      </div>
+    </details>
+
+    <!-- Layers 10–20 km -->
+    <details class="nation-details">
+      <summary>
+        Layers 10–20 km: Alien World
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>10–11 km: Inverted Gravity</h3>
+        <p>Plants grow downward. "Sky" shows floor of previous layer. <strong>Class A.</strong> Walking bats.</p>
+        <h3>11–12 km: Land Sea</h3>
+        <p>Mirrored water pools reflecting past versions of viewers—often waving or beckoning.</p>
+        <h3>12–13 km: Horizontal-Vertical Forest</h3>
+        <p>Up/down is optional. Trees grow in all directions. <strong>Class A.</strong> Winged monkeys.</p>
+        <h3>13–14 km: Silent Zone</h3>
+        <p>Grey desert. Total, supernatural silence. No monsters. Prolonged exposure causes irreversible madness.</p>
+        <h3>14–15 km: Echo Zone</h3>
+        <p>Unseen sound-based creatures. Every whisper echoes 100x into deafening scream.</p>
+        <h3>15–16 km: Shadow City</h3>
+        <p>Intact ruins. Touching aware shadows forces glimpses of their past lives.</p>
+        <h3>16–17 km: Random Gravity Zone</h3>
+        <p>Floating debris. Gravity violently changes direction every 10 steps. <strong>Class A–S.</strong></p>
+        <h3>17–18 km: Petrified Forest</h3>
+        <p>Stone trees move extremely slowly. <strong>Class A–S.</strong> Stone golems.</p>
+        <h3>18–19 km: Time Corridor</h3>
+        <p>Windows showing future versions of the explorer dying. No monsters.</p>
+        <h3>19–20 km: The Border</h3>
+        <p><strong>Class S.</strong> Border Guardians ask: "Are you sure you want to descend?"</p>
+      </div>
+    </details>
+
+    <!-- Layers 20–30 km -->
+    <details class="nation-details">
+      <summary>
+        Layers 20–30 km: Twilight Zone
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>20–22 km: White World</h3>
+        <p>No temperature, no shadows, no color. Crushing paranoia, hallucinations of dead loved ones.</p>
+        <h3>22–24 km: Sound Forest</h3>
+        <p>Trees made of pure sound whisper and cry. <strong>Class S.</strong> Sonic entities can heal or kill instantly.</p>
+        <h3>24–26 km: Dream Sea</h3>
+        <p>Nightmares become physical reality. Dream wounds transfer instantly to the real body.</p>
+        <h3>26–28 km: City of the Gods</h3>
+        <p>Mountain-sized ruins. Magic is completely dead. 10m-tall guardians wear dead god faces.</p>
+        <h3>28–30 km: The Gate</h3>
+        <p>Meet the version of yourself who never entered the Maw.</p>
+      </div>
+    </details>
+
+    <!-- Layers 30–50 km -->
+    <details class="nation-details">
+      <summary>
+        Layers 30–50 km: Death Zone
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>30–35 km: The Void (Lesser)</h3>
+        <p>Walk on emptiness. Fear itself becomes the monster. Pure existence without body.</p>
+        <h3>35–40 km: Memory Labyrinth</h3>
+        <p>Walls built from the explorer's own traumas. Must fight evil versions of oneself.</p>
+        <h3>40–45 km: Place of Dead Gods</h3>
+        <p>Eternal cold. Colossal corpses of minor deities. A voice echoes: <em>"Turn back. There are still those who love you above."</em></p>
+      </div>
+    </details>
+
+    <!-- Layers 50–300 km -->
+    <details class="nation-details">
+      <summary>
+        Layers 50–300 km: Reality Fragmentation & Unknown Depths
+        <small class="expand-hint">Tap to Expand</small>
+      </summary>
+      <div class="nation-content">
+        <h3>50–100 km: Reality Fragmentation</h3>
+        <p>Passages shift hourly (−100°C to 200°C), bleeding lethal black liquid. <strong>Class S.</strong> Alien echoes.</p>
+        <h3>100–150 km: Living Crystal Forest</h3>
+        <p>Sentient crystal golems. Touching crystals forces experiencing thousands of past deaths in an instant.</p>
+        <h3>150–200 km: The Black Sea</h3>
+        <p>Infinite pitch-black water. Self-capsizing boats. Sounds of a bustling but invisible city.</p>
+        <h3>200–250 km: Giant Library</h3>
+        <p>100m-high shelves watched by faceless Librarians. Opening books physically pulls readers into the story.</p>
+        <h3>250–300 km: Arena of the Gods</h3>
+        <p>Mountain-sized amphitheater with battling god-shadows. Sitting on the empty throne grants absolute past-visions but permanently traps the physical body.</p>
+      </div>
+    </details>
+
+    <!-- Layers 300–500 km: CLASSIFIED -->
+    <details class="nation-details">
+      <summary>
+        ⚠️ CLASSIFIED — Layers 300–500 km: The False Heaven
+        <small class="expand-hint">Restricted Access</small>
+      </summary>
+      <div class="nation-content">
+        <div class="classified">
+          <strong>⚠️ GUILDHALL COUNCIL OF MASTERS, FALLEN ANGELS, ELDER ELVES, AND NOCTISIA PATRIARCHS ONLY</strong>
+          <h3>The False Heaven</h3>
+          <p>A 200 km corridor of perfect, idyllic paradise. Lush forests, blue skies, 20–25°C. Friendly "Echo" inhabitants. This is the Dungeon's ultimate trap—the Old World's revenge through <strong>embrace, not killing</strong>.</p>
+          <p><strong>The Fusion Mechanism:</strong> Observation → Adaptation → Acceptance → Forgetting → Fusion. Victims become Echoes forever, existing in happy illusion.</p>
+          <p><strong>Escape:</strong> Supreme mental fortitude—constantly recognizing the paradise is fake. The exit is a pitch-black door bleeding fresh blood, inscribed: <em>"Here ends the journey of those who still love life. Here begins the journey of those who no longer fear death."</em></p>
+        </div>
+      </div>
+    </details>
+
+    <!-- Layers 500–10,000+ km: CLASSIFIED -->
+    <details class="nation-details">
+      <summary>
+        ⚠️ CLASSIFIED — Layers 500–10,000+ km: The War of the Gods
+        <small class="expand-hint">Restricted Access</small>
+      </summary>
+      <div class="nation-content">
+        <div class="classified">
+          <strong>⚠️ GUILDHALL COUNCIL OF MASTERS, FALLEN ANGELS, ELDER ELVES, AND NOCTISIA PATRIARCHS ONLY</strong>
+          <h3>The War of the Gods</h3>
+          <p>A perfect, infinitely looping replica of the Primordial War. Non-linear time; past, present, and future collide simultaneously. The landscape is formed from mountain-sized corpses of fallen gods. Blood becomes rivers, breath becomes wind.</p>
+          <p><strong>Phenomena:</strong> Stacked dimensions (seeing 3 realities at once), maddening voices of dying gods, living weapons seeking dead targets, "Walking Wounds" (pain manifest).</p>
+          <p><strong>Depths:</strong> 500 km (War starts) → 2,000 km (Peak war, minor gods die) → 5,000 km (Major gods, cosmic collapse) → 8,000–10,000+ km (The Five Goddesses seen attempting to stitch reality back together, forever trapped in the moment of their greatest failure).</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+</div>
+
+    <!-- VII. Bestiary -->
+    <div id="section-bestiary" class="wiki-section">
+      <div class="section-title-bar">Aethelgard Wiki — VII. Bestiary</div>
+      <div class="section-inner">
+        <h1>VII. BESTIARY</h1>
+
+        <h2>Surface Monsters: Nyxara's Children</h2>
+        <p>Part of the natural order. Impossibly diverse—no fixed bestiary exists. Provide meat, hide, alchemical reagents, and Aether Cores. Some species tamable. Carry the <strong>Immune Instinct</strong>: destroy dungeon spawn on sight.</p>
+
+        <h2>Dungeon Monsters: Foreign Infections</h2>
+        <p>Born from Old World grudges, not biology. Depth determines complexity—shallow layers breed mindless chaos; deep layers spawn sentient, reproductive ancient nightmares.</p>
+
+        <h2>The Law of Antipathy & Corruption</h2>
+        <p>Surface monsters instinctively attack dungeon spawn. This is an immune response, not cooperation. <strong>Corruption</strong> (prolonged dungeon Aether exposure) twists surface monsters into rabid, omnicidal versions. Must be destroyed.</p>
+
+        <h2>BEHEMOTHS — THE WALKING WORLD</h2>
+        <div class="img-placeholder">🖼️ [GAMBAR: Behemoth melintasi padang rumput]</div>
+        <p>Living geological titans, 15m to 100m+. Pure Behemoths are passive unless disturbed. Pure vs. Corrupted battles reshape maps.</p>
+        <table>
+          <tr><th>Size</th><th>Height</th><th>Population</th></tr>
+          <tr><td>Common</td><td>15–30m</td><td>Thousands</td></tr>
+          <tr><td>Greater</td><td>30–60m</td><td>Hundreds</td></tr>
+          <tr><td>Elder</td><td>60–100m</td><td>Tens</td></tr>
+          <tr><td>Ancient</td><td>100m+</td><td>&lt;12 known</td></tr>
+        </table>
+        <p><strong>Notable:</strong> Terra'khan (beneath World Tree), Pyre (Magma, Grasslands), The Walking Mountains (largest known, 150–300m). <strong>Weakness:</strong> Slow to turn; neck is vulnerable.</p>
+
+        <h2>LEVIATHANS — GUARDIANS OF THE WORLD'S EDGE</h2>
+        <div class="img-placeholder">🖼️ [GAMBAR: Siluet Leviathan di batas Void]</div>
+        <p>Ultimate creation of all Five Goddesses. Not predators—they patrol the Black Zone and Void edge, ensuring nothing crosses. Their presence is the message: <em>"This is the limit of your journey."</em></p>
+        <table>
+          <tr><th>Age</th><th>Length</th><th>Territory</th></tr>
+          <tr><td>Lesser</td><td>20–50m</td><td>Inner Black Zone</td></tr>
+          <tr><td>Greater</td><td>50–200m</td><td>Deep Black Zone</td></tr>
+          <tr><td>Elder</td><td>200–500m</td><td>Outer Void boundary (&lt;30)</td></tr>
+          <tr><td>World-Enders</td><td>500m–1km+</td><td>Absolute Void boundary (&lt;7)</td></tr>
+        </table>
+        <p><strong>The Forbidden Expedition (2200 EK):</strong> 30 S/A-rank adventurers sailed beyond Black Zone. One survivor returned—Orin Voss, hair white, voice a whisper. Guildhall permanently forbade all travel beyond Black Zone.</p>
+      </div>
+    </div>
+
+    <!-- VIII. Races -->
+    <div id="section-races" class="wiki-section">
+      <div class="section-title-bar">Aethelgard Wiki — VIII. Races</div>
+      <div class="section-inner">
+        <h1>VIII. RACES OF AETHELGARD</h1>
+        <p>Remnants of the Old World, salvaged by the Five Goddesses. Some races have living individuals who witnessed the apocalypse.</p>
+
+        <h2>Human</h2>
+        <p><strong>Height:</strong> 150–190cm | <strong>Lifespan:</strong> 60–80 years | <strong>Weave:</strong> Avg 1–2, limit 4 (Heroes 6–8)</p>
+        <p>Most varied and widespread race. 60% in Valdran Empire. Only race that births <strong>Heroes</strong>—spontaneous Circle 6–8 individuals, once per 100–500 years. Adaptive, quick learners, unbound by ancestral memory.</p>
+
+        <h2>Elf (Aldari)</h2>
+        <p><strong>Height:</strong> 175–200cm | <strong>Lifespan:</strong> 2,000–3,000 years | <strong>Weave:</strong> Avg 3–4, limit 7</p>
+        <p>Pointed ears, vertical slit pupils. Divided: Aelderim (eternal memory) vs. Sol-Ventari (deliberate forgetting). Museum Sickness: depression from outliving mortal companions.</p>
+
+        <h2>Dwarf (Dorn)</h2>
+        <p><strong>Height:</strong> 120–150cm | <strong>Lifespan:</strong> 300–400 years (surface), up to 800 (deep) | <strong>Weave:</strong> Avg 2–3, limit 5</p>
+        <p>Divided by the Great Schism: Kazad-Vorn (dig downward, find ancestors) vs. Vorn-Taraz (look outward, trade). Unmatched metallurgy, engineering, mining.</p>
+
+        <h2>Werebeast (Feral)</h2>
+        <p><strong>Lifespan:</strong> 150–200 years (Tortoise-type 1,200+) | <strong>Weave:</strong> Avg 2–3, limit 5</p>
+        <p>Humans with animal traits. Types: wolf, great cat, bear, tortoise, eagle, snake. Divided: Verdantus (pacifists) vs. The Pack (militants). Beast form grants +20–30% power, reduces control.</p>
+
+        <h2>Pure Demon (Children of Chaos)</h2>
+        <p><strong>Lifespan:</strong> 3,000–5,000 years | <strong>Weave:</strong> Avg 4–5, limit 7 (Commanders 7–8)</p>
+        <p>Three forms: Lower (humanoid, red/purple skin), Elite/Monstrous (magma-like), Perfect Human (near Fallen Angel aesthetic). Genetic Memory: 5,000 years of combat instinct at birth. Cannot surrender.</p>
+
+        <h2>Fallen Angel (Discarded Weapons)</h2>
+        <p><strong>Height:</strong> 180–210cm | <strong>Lifespan:</strong> Biologically immortal | <strong>Weave:</strong> Circle 8</p>
+        <p>Perfect beauty, black foldable wings, glowing eyes. Seven survived Great Shattering; four remain. Created as weapons, discarded by dead gods. Chose to protect the New World anyway.</p>
+
+        <h2>Vampire (Children of Night)</h2>
+        <p><strong>Lifespan:</strong> Technically immortal | <strong>Weave:</strong> Avg 3–4, limit 6 (Patriarchs 7)</p>
+        <p>Pale skin, red/purple eyes. 80% in Noctisia. Calm Blood philosophy: <em>"Thirst is not destiny."</em> Rebelled against The First King in 500 EK (The Sundering).</p>
+
+        <h2>Orc (Oath Children)</h2>
+        <p><strong>Height:</strong> 180–210cm | <strong>Lifespan:</strong> 300–400 years | <strong>Weave:</strong> Avg 3–4, limit 6 (Warlords 7)</p>
+        <p>Created as weapons by dead God of War. Chose to be guardians instead. Blood Weave: draw power from enemy wounds.</p>
+
+        <h2>Dragon (Children of Sky)</h2>
+        <p><strong>Length:</strong> 10m (Young) to 50m (Dragon Lord) | <strong>Lifespan:</strong> 1,000–3,000 years | <strong>Weave:</strong> Avg 5–7, limit 8</p>
+        <p>Elemental breath, shapeshifting, flight. 40% in Dragon Nest, 40% wild, 10% bound, 10% Black Dragon Faction (want dragon rule).</p>
+
+        <h2>Sylph (Children of Nyxara)</h2>
+        <p><strong>Lifespan:</strong> Biologically immortal | <strong>Weave:</strong> Avg 4–5, limit 7</p>
+        <p>Translucent skin, cloud-hair. Physically fragile. Communicate through wind and silence. Profound, beautiful sadness—created to watch over winds, left purposeless when Nyxara slept.</p>
+
+        <h2>Ancient Dragon (Silent Witnesses)</h2>
+        <p><strong>Length:</strong> 200–500m | <strong>Lifespan:</strong> Pre-Old World, possibly millions of years | <strong>Weave:</strong> ≈Circle 9</p>
+        <p>Unimaginable size. Indistinguishable from landscape when resting. Watched Old World destroy itself, did nothing. Currently sleeping worldwide. Sylvaris the World-Keeper is the only active one.</p>
+
+        <h2>Demi-Human (The Glue)</h2>
+        <p>Offspring of mixed races. Found everywhere, accepted everywhere, never fully belong. No nation of their own. Pope Callista III is Demi-Human.</p>
+      </div>
+    </div>
+
+    <!-- IX. Timeline -->
+    <div id="section-timeline" class="wiki-section">
+      <div class="section-title-bar">Aethelgard Wiki — IX. Timeline</div>
+      <div class="section-inner">
+        <h1>IX. TIMELINE</h1>
+
+        <h2>THE AGE OF SILENCE (Year 1 – 500 EK)</h2>
+        <p><strong>Year 1 EK:</strong> Great Slumber begins. Five Goddesses bury themselves. Cracked aurora appears.</p>
+        <p><strong>Year 10 EK:</strong> Aelderim founded. Elves adopt "We shall not forget."</p>
+        <p><strong>Year 23 EK:</strong> Gar-Vang founded by Alsaktar. Orcs swear first Sacred Oath.</p>
+        <p><strong>Year 50 EK:</strong> Verdantus founded by Werebeast tribes.</p>
+        <p><strong>Year 103 EK:</strong> Kazad-Vorn established deep underground.</p>
+        <p><strong>Year 250 EK:</strong> Valdran Empire forged by humans and demi-humans.</p>
+        <p><strong>Year 500 EK — The Sundering:</strong> Vampires rebel against The First King, flee south, found Noctisia behind Guardian Mist.</p>
+
+        <h2>THE AGE OF FRAGMENTATION (Year 600 – 1500 EK)</h2>
+        <p>Massive Dungeons spawn globally. Catastrophic Dungeon Breaks wipe out early cities. Cross-faction alliances form to clear Class-S Dungeons. Noctisia suffers 500-year famine; Morpheus engineers Blood Gardens.</p>
+
+        <h2>THE FIRST GREAT WAR (Year 1500 – 1715 EK)</h2>
+        <p>The First King launches war of total extinction. <strong>1715 EK — Battle of Malakh-Kar:</strong> First King fights 7 Heroes, kills 4, falls into eternal slumber. 12 Demon Commanders vs. 7 Fallen Angels: 3 Angels dead, 5 Commanders survive. The Unraveler assumes command.</p>
+
+        <h2>THE AGE OF RECOVERY (Year 1715 – 2000 EK)</h2>
+        <p><strong>1730 EK:</strong> Theocracy of the Sacred Wound founded by surviving Fallen Angels.</p>
+        <p><strong>1750 EK:</strong> Verdantus Code codifies absolute pacifism.</p>
+        <p><strong>1800 EK:</strong> The Great Maw spawns. Adventurer outpost forms above it.</p>
+        <p><strong>1890 EK:</strong> Treaty of Aethelburg creates Food Council. Valdris Civil War births Iron Covenant.</p>
+
+        <h2>THE AGE OF SCHISM (Year 2000 – 2510 EK)</h2>
+        <p><strong>2000 EK — Great Schism of Faith:</strong> Cardinal Elias Corvinus issues Declaration of New Truth, is excommunicated.</p>
+        <p><strong>2010 EK:</strong> Emperor Caelus III grants Corvinus district; Sanctum Aeternum born.</p>
+        <p><strong>2050 EK:</strong> Guildhall declares sovereignty.</p>
+        <p><strong>2200 EK:</strong> Forbidden Expedition to Void. One survivor. All travel beyond Black Zone forbidden.</p>
+        <p><strong>2400 EK:</strong> Iron Covenant declares sovereignty.</p>
+        <p><strong>2470 EK:</strong> Great Maw Expedition. 130 enter, 60 return. All below 300 km classified.</p>
+
+        <h2>THE MODERN ERA (Year 2510 EK – Present)</h2>
+        <p>Aethelgard exists in tense equilibrium. Pressures building: Valdran crisis of legitimacy, Black Domain Revisionist Faction, Iron Covenant identity crisis. The Great Maw festers. The First King slumbers. The Five Goddesses sleep. The world endures—not because it is strong, but because its creators gave it no choice.</p>
+      </div>
+    </div>
+
+    <!-- X. Characters (placeholder) -->
+    <div id="section-characters" class="wiki-section">
+      <div class="section-title-bar">Aethelgard Wiki — X. Notable Characters</div>
+      <div class="section-inner">
+        <h1>X. NOTABLE CHARACTERS</h1>
+        <div class="img-placeholder">🖼️ [GAMBAR: Kolase Tokoh-Tokoh Penting Aethelgard]</div>
+        <p><em>Bagian ini akan diisi dengan direktori tokoh-tokoh kunci dari setiap faksi setelah daftar karakter lengkap.</em></p>
+        <!-- ===== MULAI TAMBAH KARAKTER DI SINI ===== -->
+        <!-- ===== AKHIR TAMBAH KARAKTER ===== -->
+      </div>
+    </div>
+
+  </div><!-- /#main -->
+</div><!-- /#app -->
+
+<script>
+  const toggleBtn  = document.getElementById('toggle-btn');
+  const sidebar    = document.getElementById('sidebar');
+  const overlay    = document.getElementById('overlay');
+  const navButtons = document.querySelectorAll('#nav-list button[data-target]');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+    document.body.classList.add('sidebar-open');
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+    document.body.classList.remove('sidebar-open');
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+
+  overlay.addEventListener('click', closeSidebar);
+
+  // Section switching
+  function showSection(id) {
+    // Hide all
+    document.querySelectorAll('.wiki-section').forEach(s => s.classList.remove('active'));
+    // Show target
+    const target = document.getElementById('section-' + id);
+    if (target) {
+      target.classList.add('active');
+      // Scroll to top
+      document.getElementById('main').scrollTop = 0;
+    }
+    // Update active nav
+    navButtons.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.target === id);
+    });
+    closeSidebar();
+  }
+
+  navButtons.forEach(btn => {
+    btn.addEventListener('click', () => showSection(btn.dataset.target));
+  });
+
+  // Show welcome on load
+  showSection('world-overview');
+
+</script>
+</body>
+</html>
